@@ -5,12 +5,13 @@ import { supabase } from '../../src/lib/supabase';
 import { useRouter } from 'next/navigation';
 import RsvpViewer from '../components/RsvpViewer';
 
+// --- DAFTAR TEMA & LIMIT GALERI FOTO ---
 const THEME_OPTIONS = [
-    { id: 'minimalist', name: 'Romantis Pink', desc: 'Efek kaca embun dan nuansa merah muda.', activeStyle: 'border-rose-500 bg-rose-50', textStyle: 'text-rose-700', icon: '🌸' },
-    { id: 'elegant', name: 'Gold Eksklusif', desc: 'Desain mewah gelap dengan ornamen emas.', activeStyle: 'border-amber-500 bg-amber-50', textStyle: 'text-amber-700', icon: '✨' },
-    { id: 'floral', name: 'Botanical Garden', desc: 'Hiasan daun estetik dan bunga-bunga cantik.', activeStyle: 'border-emerald-500 bg-emerald-50', textStyle: 'text-emerald-700', icon: '🌿' },
-    { id: 'rustic', name: 'Rustic Vintage', desc: 'Nuansa hangat tekstur kayu dan warna bumi.', activeStyle: 'border-orange-500 bg-orange-50', textStyle: 'text-orange-700', icon: '🍂' },
-    { id: 'modern', name: 'Modern Minimalis', desc: 'Bersih, elegan, dengan tipografi yang tegas.', activeStyle: 'border-blue-500 bg-blue-50', textStyle: 'text-blue-700', icon: '💎' },
+    { id: 'minimalist', name: 'Romantis Pink', desc: 'Efek kaca embun. Max 4 Foto.', activeStyle: 'border-rose-500 bg-rose-50', textStyle: 'text-rose-700', icon: '🌸', maxGallery: 4 },
+    { id: 'elegant', name: 'Gold Eksklusif', desc: 'Desain mewah gelap. Max 3 Foto.', activeStyle: 'border-amber-500 bg-amber-50', textStyle: 'text-amber-700', icon: '✨', maxGallery: 3 },
+    { id: 'floral', name: 'Botanical Garden', desc: 'Hiasan daun estetik. Max 2 Foto.', activeStyle: 'border-emerald-500 bg-emerald-50', textStyle: 'text-emerald-700', icon: '🌿', maxGallery: 2 },
+    { id: 'rustic', name: 'Rustic Vintage', desc: 'Nuansa tekstur kayu. Max 4 Foto.', activeStyle: 'border-orange-500 bg-orange-50', textStyle: 'text-orange-700', icon: '🍂', maxGallery: 4 },
+    { id: 'modern', name: 'Modern Minimalis', desc: 'Bersih, elegan. Max 2 Foto.', activeStyle: 'border-blue-500 bg-blue-50', textStyle: 'text-blue-700', icon: '💎', maxGallery: 2 },
 ];
 
 export default function DashboardPage() {
@@ -27,14 +28,20 @@ export default function DashboardPage() {
     const [generatedGuestLink, setGeneratedGuestLink] = useState('');
 
     // --- STATE BARU: Keamanan Edit (Mencegah Kepencet) ---
-    // Mode edit otomatis true jika user baru (belum ada data)
     const [isEditMode, setIsEditMode] = useState(true);
     // -----------------------------------------------------
 
     const router = useRouter();
 
+    // --- PENAMBAHAN FIELD BARU DI STATE FORM ---
     const [formData, setFormData] = useState({
-        slug: '', theme_name: 'minimalist', groom_name: '', bride_name: '', event_date: '', location_address: '', qris_image_url: ''
+        slug: '', theme_name: 'minimalist', groom_name: '', bride_name: '', event_date: '', location_address: '', qris_image_url: '',
+        hero_image_url: '',
+        gallery_images: [] as string[],
+        google_maps_link: '',
+        bank_name: '',
+        bank_account_name: '',
+        bank_account_number: ''
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -69,7 +76,13 @@ export default function DashboardPage() {
                     bride_name: existingData.bride_name || '',
                     event_date: formattedDate,
                     location_address: existingData.location_address || '',
-                    qris_image_url: existingData.qris_image_url || ''
+                    qris_image_url: existingData.qris_image_url || '',
+                    hero_image_url: existingData.hero_image_url || '',
+                    gallery_images: existingData.gallery_images || [],
+                    google_maps_link: existingData.google_maps_link || '',
+                    bank_name: existingData.bank_name || '',
+                    bank_account_name: existingData.bank_account_name || '',
+                    bank_account_number: existingData.bank_account_number || ''
                 });
             }
             setIsLoading(false);
@@ -105,6 +118,12 @@ export default function DashboardPage() {
             event_date: formData.event_date,
             location_address: formData.location_address,
             qris_image_url: formData.qris_image_url,
+            hero_image_url: formData.hero_image_url,
+            gallery_images: formData.gallery_images,
+            google_maps_link: formData.google_maps_link,
+            bank_name: formData.bank_name,
+            bank_account_name: formData.bank_account_name,
+            bank_account_number: formData.bank_account_number
         };
 
         try {
@@ -129,12 +148,28 @@ export default function DashboardPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
 
+    // --- HANDLER KHUSUS GALERI FOTO ---
+    const handleGalleryChange = (index: number, value: string) => {
+        const newGallery = [...formData.gallery_images];
+        newGallery[index] = value;
+        setFormData({ ...formData, gallery_images: newGallery });
+    };
+    // ----------------------------------
+
     const handleThemeChange = (themeId: string) => {
         if (invitationId) {
             alert('🔒 Tema terkunci! Undangan Anda sudah tersimpan. Silakan hubungi Admin jika ingin mengganti tema.');
             return;
         }
-        setFormData({ ...formData, theme_name: themeId });
+
+        // Potong jumlah foto jika pindah ke tema dengan batas foto yang lebih sedikit
+        const selectedTheme = THEME_OPTIONS.find(t => t.id === themeId);
+        const currentGallery = [...formData.gallery_images];
+        if (selectedTheme && currentGallery.length > selectedTheme.maxGallery) {
+            currentGallery.length = selectedTheme.maxGallery;
+        }
+
+        setFormData({ ...formData, theme_name: themeId, gallery_images: currentGallery });
     };
 
     const handleGenerateGuestLink = (e: React.FormEvent) => {
@@ -157,6 +192,10 @@ export default function DashboardPage() {
     const adminWhatsAppUrl = "https://wa.me/6281234567890?text=" + encodeURIComponent("Halo Admin Creative Soft, saya ingin meminta bantuan untuk mengganti tema undangan saya.");
     const whatsappMessage = `Halo Admin Creative Soft, saya sudah transfer untuk aktivasi undangan dengan tautan: creative-soft.my.id/${formData.slug}. Berikut lampiran bukti transfernya.`;
     const whatsappLink = `https://wa.me/6281234567890?text=${encodeURIComponent(whatsappMessage)}`;
+
+    // Menentukan limit galeri berdasarkan tema terpilih
+    const activeThemeConfig = THEME_OPTIONS.find(t => t.id === formData.theme_name);
+    const maxGalleryPhotos = activeThemeConfig ? activeThemeConfig.maxGallery : 0;
 
     if (isLoading) return <div className="min-h-screen bg-rose-50 flex items-center justify-center"><div className="text-rose-600 animate-pulse font-serif text-xl">Memuat Ruang Kerja Anda... 🕊️</div></div>;
 
@@ -217,8 +256,8 @@ export default function DashboardPage() {
                                     key={theme.id}
                                     onClick={() => handleThemeChange(theme.id)}
                                     className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === theme.id
-                                            ? theme.activeStyle
-                                            : 'border-gray-200 bg-white hover:border-rose-100'
+                                        ? theme.activeStyle
+                                        : 'border-gray-200 bg-white hover:border-rose-100'
                                         } ${invitationId && formData.theme_name !== theme.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     <div className="flex justify-between items-center mb-2">
@@ -241,12 +280,12 @@ export default function DashboardPage() {
                         )}
                     </div>
 
+                    {/* BARIS PERTAMA: MEMPELAI & ACARA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💍 Data Mempelai</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
 
-                            {/* Tambahkan disabled={!isEditMode} ke semua input */}
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Pria</label><input type="text" name="groom_name" value={formData.groom_name} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} /></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Wanita</label><input type="text" name="bride_name" value={formData.bride_name} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} /></div>
 
@@ -274,17 +313,73 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
-                            <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💌 Acara & Hadiah</h3>
+                            <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">📍 Acara & Lokasi</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
 
-                            {/* Tambahkan disabled={!isEditMode} */}
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label><input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} /></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Alamat Lengkap Lokasi</label><textarea name="location_address" value={formData.location_address} onChange={handleChange} required disabled={!isEditMode} className={`${inputClasses} resize-none`} rows={3} /></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} placeholder="Ini QRIS untuk tamu Anda" /></div>
+                            <div>
+                                <label className="block text-sm font-medium text-rose-900 mb-1">Link URL Google Maps</label>
+                                <input type="url" name="google_maps_link" value={formData.google_maps_link} onChange={handleChange} disabled={!isEditMode} placeholder="https://maps.app.goo.gl/..." className={inputClasses} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* --- AREA TOMBOL EDIT / SIMPAN (BARU) --- */}
+                    {/* BARIS KEDUA: FOTO & AMPLOP DIGITAL */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
+                            <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">📸 Foto Utama & Galeri</h3>
+                            <div className="h-px w-full bg-rose-100 mb-4"></div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-rose-900 mb-1">Tautan Foto Utama (Header)</label>
+                                <input type="url" name="hero_image_url" value={formData.hero_image_url} onChange={handleChange} disabled={!isEditMode} placeholder="Link dari Google Drive/Imgur" className={inputClasses} />
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="block text-sm font-medium text-rose-900 mb-2">Tautan Foto Galeri (Batas Tema: {maxGalleryPhotos} Foto)</label>
+                                <div className="space-y-3">
+                                    {/* Merender input kotak foto sesuai limit dari tema yang dipilih */}
+                                    {Array.from({ length: maxGalleryPhotos }).map((_, index) => (
+                                        <input
+                                            key={index}
+                                            type="url"
+                                            value={formData.gallery_images[index] || ''}
+                                            onChange={(e) => handleGalleryChange(index, e.target.value)}
+                                            disabled={!isEditMode}
+                                            placeholder={`Link Foto Galeri Ke-${index + 1}`}
+                                            className={inputClasses}
+                                        />
+                                    ))}
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-2">*Kosongkan jika tidak ada foto.</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
+                            <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💌 Amplop Digital</h3>
+                            <div className="h-px w-full bg-rose-100 mb-4"></div>
+
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS (Opsional)</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} disabled={!isEditMode} className={inputClasses} placeholder="Tautan gambar barcode QRIS" /></div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-rose-100">
+                                <div className="sm:col-span-2">
+                                    <label className="block text-sm font-medium text-rose-900 mb-1">Nama Bank / E-Wallet</label>
+                                    <input type="text" name="bank_name" value={formData.bank_name} onChange={handleChange} disabled={!isEditMode} placeholder="Contoh: BCA / GoPay" className={inputClasses} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-rose-900 mb-1">No. Rekening</label>
+                                    <input type="text" name="bank_account_number" value={formData.bank_account_number} onChange={handleChange} disabled={!isEditMode} placeholder="Contoh: 12345678" className={inputClasses} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-rose-900 mb-1">Nama Pemilik</label>
+                                    <input type="text" name="bank_account_name" value={formData.bank_account_name} onChange={handleChange} disabled={!isEditMode} placeholder="A/N Pemilik Rekening" className={inputClasses} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* --- AREA TOMBOL EDIT / SIMPAN --- */}
                     <div className="pt-8 border-t border-rose-100 flex flex-wrap justify-end gap-3">
                         {invitationId && !isEditMode ? (
                             <button
@@ -301,7 +396,6 @@ export default function DashboardPage() {
                                         type="button"
                                         onClick={() => {
                                             setIsEditMode(false);
-                                            // Optional: Bisa juga reload halaman atau fetch ulang data agar kembali ke data awal
                                         }}
                                         className="w-full md:w-auto px-8 py-3.5 bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium rounded-full transition-all duration-300"
                                     >
@@ -318,7 +412,6 @@ export default function DashboardPage() {
                             </>
                         )}
                     </div>
-                    {/* -------------------------------------- */}
                 </form>
 
                 {invitationId && (
