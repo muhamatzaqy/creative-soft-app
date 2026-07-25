@@ -31,6 +31,10 @@ export default function DashboardPage() {
     const [isEditMode, setIsEditMode] = useState(true);
     // -----------------------------------------------------
 
+    // --- STATE UNTUK LOADING UPLOAD GAMBAR ---
+    const [uploadingState, setUploadingState] = useState<{ [key: string]: boolean }>({});
+    // -----------------------------------------
+
     const router = useRouter();
 
     // --- PENAMBAHAN FIELD BARU DI STATE FORM ---
@@ -95,6 +99,49 @@ export default function DashboardPage() {
         router.push('/login');
     };
 
+    // --- FUNGSI UPLOAD GAMBAR KE SUPABASE ---
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, index?: number) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Batasi ukuran file (Max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Ukuran foto terlalu besar. Maksimal 5MB.');
+            return;
+        }
+
+        const stateKey = index !== undefined ? `${fieldName}_${index}` : fieldName;
+        setUploadingState(prev => ({ ...prev, [stateKey]: true }));
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}-${Date.now()}.${fileExt}`;
+            const filePath = `${fieldName}/${fileName}`;
+
+            // Upload ke bucket 'invitations'
+            const { error: uploadError } = await supabase.storage.from('invitations').upload(filePath, file);
+            if (uploadError) throw uploadError;
+
+            // Ambil URL publik gambar
+            const { data } = supabase.storage.from('invitations').getPublicUrl(filePath);
+            const publicUrl = data.publicUrl;
+
+            // Update state form
+            if (index !== undefined) {
+                const newGallery = [...formData.gallery_images];
+                newGallery[index] = publicUrl;
+                setFormData({ ...formData, gallery_images: newGallery });
+            } else {
+                setFormData({ ...formData, [fieldName]: publicUrl });
+            }
+        } catch (error: any) {
+            alert('Gagal mengunggah foto: ' + error.message);
+        } finally {
+            setUploadingState(prev => ({ ...prev, [stateKey]: false }));
+        }
+    };
+    // ----------------------------------------
+
     const handleSaveData = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -148,14 +195,6 @@ export default function DashboardPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
 
-    // --- HANDLER KHUSUS GALERI FOTO ---
-    const handleGalleryChange = (index: number, value: string) => {
-        const newGallery = [...formData.gallery_images];
-        newGallery[index] = value;
-        setFormData({ ...formData, gallery_images: newGallery });
-    };
-    // ----------------------------------
-
     const handleThemeChange = (themeId: string) => {
         if (invitationId) {
             alert('🔒 Tema terkunci! Undangan Anda sudah tersimpan. Silakan hubungi Admin jika ingin mengganti tema.');
@@ -188,6 +227,8 @@ export default function DashboardPage() {
 
     // Style khusus untuk input yang di-disable (agar terlihat terkunci)
     const inputClasses = "w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all focus:ring-2 focus:ring-rose-300 disabled:bg-rose-50/50 disabled:text-gray-500 disabled:border-rose-100 disabled:cursor-not-allowed";
+    // Style khusus untuk input tipe FILE
+    const fileInputClasses = "w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const adminWhatsAppUrl = "https://wa.me/6281234567890?text=" + encodeURIComponent("Halo Admin Creative Soft, saya ingin meminta bantuan untuk mengganti tema undangan saya.");
     const whatsappMessage = `Halo Admin Creative Soft, saya sudah transfer untuk aktivasi undangan dengan tautan: creative-soft.my.id/${formData.slug}. Berikut lampiran bukti transfernya.`;
@@ -325,34 +366,45 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* BARIS KEDUA: FOTO & AMPLOP DIGITAL */}
+                    {/* BARIS KEDUA: FOTO (FILE UPLOAD) & AMPLOP DIGITAL */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">📸 Foto Utama & Galeri</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-rose-900 mb-1">Tautan Foto Utama (Header)</label>
-                                <input type="url" name="hero_image_url" value={formData.hero_image_url} onChange={handleChange} disabled={!isEditMode} placeholder="Link dari Google Drive/Imgur" className={inputClasses} />
+                            {/* UPLOAD FOTO UTAMA */}
+                            <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                                <label className="block text-sm font-bold text-rose-900 mb-2">Foto Utama (Sampul)</label>
+                                {formData.hero_image_url && (
+                                    <div className="mb-3 relative w-full h-32 rounded-lg overflow-hidden border border-gray-200">
+                                        <img src={formData.hero_image_url} alt="Hero Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <input type="file" accept="image/*" disabled={!isEditMode || uploadingState['hero_image_url']} onChange={(e) => handleFileUpload(e, 'hero_image_url')} className={fileInputClasses} />
+                                {uploadingState['hero_image_url'] && <p className="text-xs text-rose-500 mt-2 animate-pulse">Mengunggah foto...</p>}
                             </div>
 
+                            {/* UPLOAD FOTO GALERI */}
                             <div className="pt-2">
-                                <label className="block text-sm font-medium text-rose-900 mb-2">Tautan Foto Galeri (Batas Tema: {maxGalleryPhotos} Foto)</label>
-                                <div className="space-y-3">
-                                    {/* Merender input kotak foto sesuai limit dari tema yang dipilih */}
+                                <label className="block text-sm font-bold text-rose-900 mb-3">Foto Galeri (Batas Tema: {maxGalleryPhotos} Foto)</label>
+                                <div className="space-y-4">
                                     {Array.from({ length: maxGalleryPhotos }).map((_, index) => (
-                                        <input
-                                            key={index}
-                                            type="url"
-                                            value={formData.gallery_images[index] || ''}
-                                            onChange={(e) => handleGalleryChange(index, e.target.value)}
-                                            disabled={!isEditMode}
-                                            placeholder={`Link Foto Galeri Ke-${index + 1}`}
-                                            className={inputClasses}
-                                        />
+                                        <div key={index} className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+                                            <div className="w-20 h-20 shrink-0 bg-rose-50 rounded-lg overflow-hidden border border-rose-200 flex items-center justify-center text-rose-300 text-xs">
+                                                {formData.gallery_images[index] ? (
+                                                    <img src={formData.gallery_images[index]} alt={`Gallery ${index}`} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span>Foto {index + 1}</span>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 w-full">
+                                                <input type="file" accept="image/*" disabled={!isEditMode || uploadingState[`gallery_images_${index}`]} onChange={(e) => handleFileUpload(e, 'gallery_images', index)} className={fileInputClasses} />
+                                                {uploadingState[`gallery_images_${index}`] && <p className="text-xs text-rose-500 mt-1 animate-pulse">Mengunggah...</p>}
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-2">*Kosongkan jika tidak ada foto.</p>
                             </div>
                         </div>
 
@@ -360,7 +412,17 @@ export default function DashboardPage() {
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💌 Amplop Digital</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
 
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS (Opsional)</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} disabled={!isEditMode} className={inputClasses} placeholder="Tautan gambar barcode QRIS" /></div>
+                            {/* UPLOAD QRIS */}
+                            <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm mb-4">
+                                <label className="block text-sm font-bold text-rose-900 mb-2">Gambar Barcode QRIS (Opsional)</label>
+                                {formData.qris_image_url && (
+                                    <div className="mb-3 relative w-32 h-32 mx-auto rounded-lg overflow-hidden border border-gray-200">
+                                        <img src={formData.qris_image_url} alt="QRIS Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <input type="file" accept="image/*" disabled={!isEditMode || uploadingState['qris_image_url']} onChange={(e) => handleFileUpload(e, 'qris_image_url')} className={fileInputClasses} />
+                                {uploadingState['qris_image_url'] && <p className="text-xs text-rose-500 mt-2 animate-pulse">Mengunggah barcode...</p>}
+                            </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-rose-100">
                                 <div className="sm:col-span-2">
@@ -404,7 +466,7 @@ export default function DashboardPage() {
                                 )}
                                 <button
                                     type="submit"
-                                    disabled={isSaving}
+                                    disabled={isSaving || Object.values(uploadingState).some(state => state)}
                                     className="w-full md:w-auto px-8 py-3.5 text-white bg-rose-600 rounded-full hover:bg-rose-700 font-medium tracking-wide disabled:bg-rose-300 transition-all duration-300 shadow-md"
                                 >
                                     {isSaving ? 'Menyimpan Cinta...' : (invitationId ? '💾 Simpan Perubahan' : 'Simpan Undangan')}
@@ -497,7 +559,7 @@ export default function DashboardPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={() => setIsPaymentPopupOpen(false)}
-                                    className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition-colors"
+                                    className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition-colors block text-center"
                                 >
                                     ✅ Saya Sudah Transfer (Kirim Bukti)
                                 </a>
