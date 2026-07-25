@@ -5,7 +5,6 @@ import { supabase } from '../../src/lib/supabase';
 import { useRouter } from 'next/navigation';
 import RsvpViewer from '../components/RsvpViewer';
 
-// --- DAFTAR KOLEKSI TEMA ---
 const THEME_OPTIONS = [
     { id: 'minimalist', name: 'Romantis Pink', desc: 'Efek kaca embun dan nuansa merah muda.', activeStyle: 'border-rose-500 bg-rose-50', textStyle: 'text-rose-700', icon: '🌸' },
     { id: 'elegant', name: 'Gold Eksklusif', desc: 'Desain mewah gelap dengan ornamen emas.', activeStyle: 'border-amber-500 bg-amber-50', textStyle: 'text-amber-700', icon: '✨' },
@@ -19,45 +18,40 @@ export default function DashboardPage() {
     const [userId, setUserId] = useState<string | null>(null);
     const [invitationId, setInvitationId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    // --- STATE BARU: Menyimpan status aktif/bayar ---
+    const [isActive, setIsActive] = useState<boolean>(false);
+    const [paymentStatus, setPaymentStatus] = useState<string>('pending');
+    // ------------------------------------------------
+
     const router = useRouter();
 
     const [formData, setFormData] = useState({
-        slug: '',
-        theme_name: 'minimalist',
-        groom_name: '',
-        bride_name: '',
-        event_date: '',
-        location_address: '',
-        qris_image_url: ''
+        slug: '', theme_name: 'minimalist', groom_name: '', bride_name: '', event_date: '', location_address: '', qris_image_url: ''
     });
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         const fetchUserData = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.push('/login');
-                return;
-            }
+            if (!user) { router.push('/login'); return; }
 
             setUserEmail(user.email ?? '');
             setUserId(user.id);
 
-            const { data: existingData, error } = await supabase
-                .from('invitations')
-                .select('*')
-                .eq('user_id', user.id)
-                .single();
+            const { data: existingData } = await supabase.from('invitations').select('*').eq('user_id', user.id).single();
 
             if (existingData) {
                 setInvitationId(existingData.id);
 
+                // Simpan status dari database ke state
+                setIsActive(existingData.is_active);
+                setPaymentStatus(existingData.payment_status);
+
                 let formattedDate = '';
                 if (existingData.event_date) {
                     const dateObj = new Date(existingData.event_date);
-                    formattedDate = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
-                        .toISOString()
-                        .slice(0, 16);
+                    formattedDate = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                 }
 
                 setFormData({
@@ -72,7 +66,6 @@ export default function DashboardPage() {
             }
             setIsLoading(false);
         };
-
         fetchUserData();
     }, [router]);
 
@@ -94,7 +87,7 @@ export default function DashboardPage() {
             event_date: formData.event_date,
             location_address: formData.location_address,
             qris_image_url: formData.qris_image_url,
-            is_active: true
+            // HAPUS is_active: true dari sini agar klien tidak bisa mencurangi sistem
         };
 
         try {
@@ -115,28 +108,16 @@ export default function DashboardPage() {
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+    const handleThemeChange = (theme: string) => { setFormData({ ...formData, theme_name: theme }); };
 
-    const handleThemeChange = (theme: string) => {
-        setFormData({ ...formData, theme_name: theme });
-    };
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-rose-50 flex items-center justify-center">
-                <div className="text-rose-600 animate-pulse font-serif text-xl">Memuat Ruang Kerja Anda... 🕊️</div>
-            </div>
-        );
-    }
+    if (isLoading) return <div className="min-h-screen bg-rose-50 flex items-center justify-center"><div className="text-rose-600 animate-pulse font-serif text-xl">Memuat Ruang Kerja Anda... 🕊️</div></div>;
 
     return (
         <div className="min-h-screen bg-[#FFF5F5] p-4 md:p-8 font-sans">
             <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100">
 
-                {/* Header Dasbor */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 border-b border-rose-100 pb-6 gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-rose-100 pb-6 gap-4">
                     <div>
                         <h1 className="text-3xl font-serif font-bold text-rose-900 tracking-wide">Studio Undangan</h1>
                         <p className="text-rose-400 mt-2 text-sm">Masuk sebagai: <span className="font-medium text-rose-600">{userEmail}</span></p>
@@ -146,27 +127,36 @@ export default function DashboardPage() {
                     </button>
                 </div>
 
-                <form onSubmit={handleSaveData} className="space-y-8">
+                {/* --- BANNER STATUS PEMBAYARAN (BARU) --- */}
+                {invitationId && !isActive && (
+                    <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="text-3xl">⚠️</div>
+                            <div>
+                                <h3 className="font-bold text-amber-800">Undangan Anda Sedang Ditangguhkan</h3>
+                                <p className="text-sm text-amber-700 mt-1">Status Pembayaran Anda saat ini: <span className="font-bold uppercase">{paymentStatus}</span>. Tautan undangan publik belum bisa diakses oleh tamu sebelum administrasi diselesaikan.</p>
+                            </div>
+                        </div>
+                        <a
+                            href="https://wa.me/6281234567890?text=Halo%20Admin%20Creative%20Soft,%20saya%20ingin%20mengonfirmasi%20pembayaran%20undangan%20saya."
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors text-sm"
+                        >
+                            Konfirmasi Pembayaran
+                        </a>
+                    </div>
+                )}
+                {/* -------------------------------------- */}
 
-                    {/* --- KOTAK PILIHAN TEMA --- */}
+                <form onSubmit={handleSaveData} className="space-y-8">
                     <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-50">
-                        <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2 mb-4">
-                            🎨 Pilihan Tema Desain
-                        </h3>
+                        <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2 mb-4">🎨 Pilihan Tema Desain</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {THEME_OPTIONS.map((theme) => (
-                                <div
-                                    key={theme.id}
-                                    onClick={() => handleThemeChange(theme.id)}
-                                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === theme.id
-                                            ? theme.activeStyle
-                                            : 'border-gray-200 bg-white hover:border-rose-100'
-                                        }`}
-                                >
+                                <div key={theme.id} onClick={() => handleThemeChange(theme.id)} className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === theme.id ? theme.activeStyle : 'border-gray-200 bg-white hover:border-rose-100'}`}>
                                     <div className="flex justify-between items-center mb-2">
-                                        <div className={`font-bold ${formData.theme_name === theme.id ? theme.textStyle : 'text-gray-700'}`}>
-                                            {theme.icon} {theme.name}
-                                        </div>
+                                        <div className={`font-bold ${formData.theme_name === theme.id ? theme.textStyle : 'text-gray-700'}`}>{theme.icon} {theme.name}</div>
                                         {formData.theme_name === theme.id && <span className={theme.textStyle}>✅</span>}
                                     </div>
                                     <div className="text-xs text-gray-500 leading-relaxed">{theme.desc}</div>
@@ -179,40 +169,28 @@ export default function DashboardPage() {
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💍 Data Mempelai</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
-                            <div>
-                                <label className="block text-sm font-medium text-rose-900 mb-1">Nama Pria</label>
-                                <input type="text" name="groom_name" value={formData.groom_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-rose-900 mb-1">Nama Wanita</label>
-                                <input type="text" name="bride_name" value={formData.bride_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all" />
-                            </div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Pria</label><input type="text" name="groom_name" value={formData.groom_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Wanita</label><input type="text" name="bride_name" value={formData.bride_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
                             <div>
                                 <label className="block text-sm font-medium text-rose-900 mb-1">Tautan Cantik (URL)</label>
-                                <input type="text" name="slug" value={formData.slug} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all bg-white" />
+                                <input type="text" name="slug" value={formData.slug} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all bg-white" />
+                                {isActive && (
+                                    <p className="text-xs text-green-600 mt-2 font-medium">✨ Undangan Aktif: <a href={`/${formData.slug}`} target="_blank" className="underline hover:text-green-700">Lihat Undangan</a></p>
+                                )}
                             </div>
                         </div>
 
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💌 Acara & Hadiah</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
-                            <div>
-                                <label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label>
-                                <input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all text-gray-700" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-rose-900 mb-1">Alamat Lengkap Lokasi</label>
-                                <textarea name="location_address" value={formData.location_address} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all resize-none" rows={3} />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label>
-                                <input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-300 outline-none transition-all" />
-                            </div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label><input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Alamat Lengkap Lokasi</label><textarea name="location_address" value={formData.location_address} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all resize-none" rows={3} /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
                         </div>
                     </div>
 
                     <div className="pt-8 border-t border-rose-100 flex justify-end">
-                        <button type="submit" disabled={isSaving} className="w-full md:w-auto px-8 py-3.5 text-white bg-rose-600 rounded-full hover:bg-rose-700 focus:ring-4 focus:ring-rose-200 font-medium tracking-wide disabled:bg-rose-300 transition-all duration-300 shadow-md shadow-rose-200">
+                        <button type="submit" disabled={isSaving} className="w-full md:w-auto px-8 py-3.5 text-white bg-rose-600 rounded-full hover:bg-rose-700 font-medium tracking-wide disabled:bg-rose-300 transition-all duration-300 shadow-md">
                             {isSaving ? 'Menyimpan Cinta...' : (invitationId ? 'Perbarui Undangan' : 'Simpan Undangan')}
                         </button>
                     </div>
@@ -223,7 +201,6 @@ export default function DashboardPage() {
                         <RsvpViewer invitationId={invitationId} />
                     </div>
                 )}
-
             </div>
         </div>
     );
