@@ -21,10 +21,12 @@ export default function DashboardPage() {
 
     const [isActive, setIsActive] = useState<boolean>(false);
     const [paymentStatus, setPaymentStatus] = useState<string>('pending');
-
-    // --- STATE BARU: Untuk mengontrol munculnya Popup QRIS ---
     const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
-    // ---------------------------------------------------------
+
+    // --- STATE BARU: Generator Tautan Tamu ---
+    const [guestInputName, setGuestInputName] = useState('');
+    const [generatedGuestLink, setGeneratedGuestLink] = useState('');
+    // ----------------------------------------
 
     const router = useRouter();
 
@@ -110,7 +112,28 @@ export default function DashboardPage() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
     const handleThemeChange = (theme: string) => { setFormData({ ...formData, theme_name: theme }); };
 
-    // Format pesan WhatsApp agar otomatis mendeteksi URL klien
+    // --- FUNGSI GENERATE & SALIN TAUTAN TAMU ---
+    const handleGenerateGuestLink = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!guestInputName.trim()) {
+            alert('Silakan masukkan nama tamu terlebih dahulu.');
+            return;
+        }
+        if (!formData.slug) {
+            alert('Mohon isi dan simpan Tautan Cantik (URL) terlebih dahulu.');
+            return;
+        }
+        const baseUrl = window.location.origin;
+        const formattedLink = `${baseUrl}/${formData.slug}?to=${encodeURIComponent(guestInputName.trim())}`;
+        setGeneratedGuestLink(formattedLink);
+    };
+
+    const handleCopyGeneratedLink = () => {
+        navigator.clipboard.writeText(generatedGuestLink);
+        alert('📋 Tautan khusus tamu berhasil disalin!');
+    };
+    // ------------------------------------------
+
     const whatsappMessage = `Halo Admin Creative Soft, saya sudah transfer untuk aktivasi undangan dengan tautan: creative-soft.my.id/${formData.slug}. Berikut lampiran bukti transfernya.`;
     const whatsappLink = `https://wa.me/6281234567890?text=${encodeURIComponent(whatsappMessage)}`;
 
@@ -215,6 +238,49 @@ export default function DashboardPage() {
                     </div>
                 </form>
 
+                {/* --- KOTAK GENERATOR TAUTAN TAMU KHUSUS --- */}
+                {invitationId && (
+                    <div className="mt-10 bg-rose-50/60 p-6 rounded-2xl border border-rose-100">
+                        <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2 mb-2">
+                            🔗 Generator Tautan Tamu Khusus
+                        </h3>
+                        <p className="text-xs text-rose-500 mb-4">
+                            Masukkan nama tamu di bawah untuk membuat tautan undangan personal yang langsung menyapa nama mereka saat dibuka.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <input
+                                type="text"
+                                value={guestInputName}
+                                onChange={(e) => setGuestInputName(e.target.value)}
+                                placeholder="Contoh: Bapak Budi Santoso"
+                                className="flex-1 px-4 py-2.5 border border-rose-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-rose-300 text-sm"
+                            />
+                            <button
+                                onClick={handleGenerateGuestLink}
+                                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-xl text-sm transition-colors shadow-sm"
+                            >
+                                Buat Tautan
+                            </button>
+                        </div>
+
+                        {generatedGuestLink && (
+                            <div className="mt-4 p-4 bg-white rounded-xl border border-rose-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <span className="text-xs font-mono text-gray-600 break-all bg-gray-50 p-2.5 rounded-lg w-full sm:w-auto flex-1 border border-gray-100">
+                                    {generatedGuestLink}
+                                </span>
+                                <button
+                                    onClick={handleCopyGeneratedLink}
+                                    className="shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs transition-colors shadow-sm"
+                                >
+                                    📋 Salin Tautan
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {/* ------------------------------------------- */}
+
                 {invitationId && (
                     <div className="mt-12 pt-8 border-t-2 border-dashed border-rose-200">
                         <RsvpViewer invitationId={invitationId} />
@@ -222,7 +288,6 @@ export default function DashboardPage() {
                 )}
             </div>
 
-            {/* --- POPUP QRIS PEMBAYARAN JASA --- */}
             {isPaymentPopupOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in-up">
@@ -233,7 +298,6 @@ export default function DashboardPage() {
 
                         <div className="p-8 text-center space-y-6">
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 inline-block">
-                                {/* GANTI GAMBAR INI DENGAN LINK GAMBAR QRIS BISNIS ANDA YANG ASLI */}
                                 <img
                                     src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"
                                     alt="QRIS Creative Soft"
@@ -274,7 +338,6 @@ export default function DashboardPage() {
                     </div>
                 </div>
             )}
-            {/* ---------------------------------- */}
         </div>
     );
 }
