@@ -19,10 +19,8 @@ export default function DashboardPage() {
     const [invitationId, setInvitationId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // --- STATE BARU: Menyimpan status aktif/bayar ---
     const [isActive, setIsActive] = useState<boolean>(false);
     const [paymentStatus, setPaymentStatus] = useState<string>('pending');
-    // ------------------------------------------------
 
     const router = useRouter();
 
@@ -43,8 +41,6 @@ export default function DashboardPage() {
 
             if (existingData) {
                 setInvitationId(existingData.id);
-
-                // Simpan status dari database ke state
                 setIsActive(existingData.is_active);
                 setPaymentStatus(existingData.payment_status);
 
@@ -87,7 +83,6 @@ export default function DashboardPage() {
             event_date: formData.event_date,
             location_address: formData.location_address,
             qris_image_url: formData.qris_image_url,
-            // HAPUS is_active: true dari sini agar klien tidak bisa mencurangi sistem
         };
 
         try {
@@ -127,27 +122,25 @@ export default function DashboardPage() {
                     </button>
                 </div>
 
-                {/* --- BANNER STATUS PEMBAYARAN (BARU) --- */}
                 {invitationId && !isActive && (
                     <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className="text-3xl">⚠️</div>
                             <div>
                                 <h3 className="font-bold text-amber-800">Undangan Anda Sedang Ditangguhkan</h3>
-                                <p className="text-sm text-amber-700 mt-1">Status Pembayaran Anda saat ini: <span className="font-bold uppercase">{paymentStatus}</span>. Tautan undangan publik belum bisa diakses oleh tamu sebelum administrasi diselesaikan.</p>
+                                <p className="text-sm text-amber-700 mt-1">Status Pembayaran Anda saat ini: <span className="font-bold uppercase">{paymentStatus}</span>. Tautan undangan publik terkunci.</p>
                             </div>
                         </div>
-                        <a
-                            href="https://wa.me/6281234567890?text=Halo%20Admin%20Creative%20Soft,%20saya%20ingin%20mengonfirmasi%20pembayaran%20undangan%20saya."
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors text-sm"
-                        >
-                            Konfirmasi Pembayaran
-                        </a>
+                        <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+                            <a href={`/${formData.slug}?preview=true`} target="_blank" className="px-4 py-2.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-800 font-bold rounded-lg transition-colors text-sm text-center shadow-sm">
+                                👁️ Lihat Preview
+                            </a>
+                            <a href="https://wa.me/6281234567890?text=Halo%20Admin%20Creative%20Soft..." target="_blank" className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors text-sm text-center shadow-sm">
+                                Konfirmasi Bayar
+                            </a>
+                        </div>
                     </div>
                 )}
-                {/* -------------------------------------- */}
 
                 <form onSubmit={handleSaveData} className="space-y-8">
                     <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-50">
@@ -171,11 +164,26 @@ export default function DashboardPage() {
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Pria</label><input type="text" name="groom_name" value={formData.groom_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Wanita</label><input type="text" name="bride_name" value={formData.bride_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
+
                             <div>
                                 <label className="block text-sm font-medium text-rose-900 mb-1">Tautan Cantik (URL)</label>
                                 <input type="text" name="slug" value={formData.slug} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all bg-white" />
-                                {isActive && (
-                                    <p className="text-xs text-green-600 mt-2 font-medium">✨ Undangan Aktif: <a href={`/${formData.slug}`} target="_blank" className="underline hover:text-green-700">Lihat Undangan</a></p>
+
+                                {invitationId && (
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                        <a href={`/${formData.slug}?preview=true`} target="_blank" className="text-xs bg-gray-100 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-200 font-medium border border-gray-200 flex items-center gap-1 shadow-sm">
+                                            👁️ Preview
+                                        </a>
+                                        {isActive ? (
+                                            <a href={`/${formData.slug}`} target="_blank" className="text-xs bg-green-50 text-green-700 px-3 py-2 rounded-md hover:bg-green-100 font-medium border border-green-200 flex items-center gap-1 shadow-sm">
+                                                ✨ Link Publik Aktif
+                                            </a>
+                                        ) : (
+                                            <span className="text-xs bg-rose-50 text-rose-600 px-3 py-2 rounded-md font-medium border border-rose-100 flex items-center gap-1 shadow-sm">
+                                                🔒 Link Publik Terkunci
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -183,7 +191,7 @@ export default function DashboardPage() {
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💌 Acara & Hadiah</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label><input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label><input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all text-gray-700" /></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Alamat Lengkap Lokasi</label><textarea name="location_address" value={formData.location_address} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all resize-none" rows={3} /></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
                         </div>
