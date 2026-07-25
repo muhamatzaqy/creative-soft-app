@@ -1,6 +1,7 @@
 import { supabase } from '../../src/lib/supabase';
 import { notFound } from 'next/navigation';
 import Countdown from '../components/Countdown';
+import GuestBook from '../components/GuestBook';
 
 // Tipe params sebagai Promise untuk Next.js 15
 export default async function InvitationPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -105,6 +106,9 @@ export default async function InvitationPage({ params }: { params: Promise<{ slu
                         </div>
                     </div>
                 )}
+
+                {/* Komponen Buku Tamu & RSVP */}
+                <GuestBook invitationId={invitation.id} />
 
                 {/* Watermark Bisnis Anda */}
                 <div className="mt-12 text-xs text-rose-300 font-medium tracking-wide">
