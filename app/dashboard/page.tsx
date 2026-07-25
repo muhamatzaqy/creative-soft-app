@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../src/lib/supabase';
 import { useRouter } from 'next/navigation';
+import RsvpViewer from '../components/RsvpViewer';
 
 export default function DashboardPage() {
     const [userEmail, setUserEmail] = useState<string | null>('');
@@ -28,8 +29,8 @@ export default function DashboardPage() {
             if (!user) {
                 router.push('/login');
                 return;
-            } 
-            
+            }
+
             setUserEmail(user.email ?? '');
             setUserId(user.id);
 
@@ -43,7 +44,7 @@ export default function DashboardPage() {
             if (existingData) {
                 // Jika data ditemukan, simpan ID-nya dan isi form dengan data lama
                 setInvitationId(existingData.id);
-                
+
                 // Format tanggal dari database (ISO) agar cocok dengan input datetime-local
                 let formattedDate = '';
                 if (existingData.event_date) {
@@ -134,7 +135,7 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-[#FFF5F5] p-4 md:p-8 font-sans">
             <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100">
-                
+
                 {/* Header Dashboard */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 border-b border-rose-100 pb-6 gap-4">
                     <div>
@@ -159,7 +160,7 @@ export default function DashboardPage() {
                                 💍 Data Mempelai
                             </h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
-                            
+
                             <div>
                                 <label className="block text-sm font-medium text-rose-900 mb-1">Nama Pria</label>
                                 <input type="text" name="groom_name" value={formData.groom_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-300 focus:border-rose-300 outline-none transition-all" placeholder="Contoh: Romeo" />
@@ -207,6 +208,13 @@ export default function DashboardPage() {
                         </button>
                     </div>
                 </form>
+
+                {/* --- KODE TAMBAHAN UNTUK MENAMPILKAN TABEL RSVP --- */}
+                {invitationId && (
+                    <div className="mt-12 pt-8 border-t-2 border-dashed border-rose-200">
+                        <RsvpViewer invitationId={invitationId} />
+                    </div>
+                )}
 
             </div>
         </div>
