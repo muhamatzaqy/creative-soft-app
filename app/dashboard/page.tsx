@@ -23,10 +23,8 @@ export default function DashboardPage() {
     const [paymentStatus, setPaymentStatus] = useState<string>('pending');
     const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
 
-    // --- STATE BARU: Generator Tautan Tamu ---
     const [guestInputName, setGuestInputName] = useState('');
     const [generatedGuestLink, setGeneratedGuestLink] = useState('');
-    // ----------------------------------------
 
     const router = useRouter();
 
@@ -83,7 +81,7 @@ export default function DashboardPage() {
         const payload = {
             user_id: userId,
             slug: formData.slug.toLowerCase().replace(/\s+/g, '-'),
-            theme_name: formData.theme_name,
+            theme_name: formData.theme_name, // Tema dikunci tidak berubah setelah tersimpan pertama kali
             groom_name: formData.groom_name,
             bride_name: formData.bride_name,
             event_date: formData.event_date,
@@ -100,7 +98,7 @@ export default function DashboardPage() {
                 const { data, error } = await supabase.from('invitations').insert([payload]).select().single();
                 if (error) throw error;
                 if (data) setInvitationId(data.id);
-                alert('🎉 Data undangan baru berhasil disimpan!');
+                alert('🎉 Data undangan baru berhasil disimpan! Tema Anda kini telah dikunci.');
             }
         } catch (error: any) {
             alert('Gagal menyimpan data: ' + error.message);
@@ -110,19 +108,21 @@ export default function DashboardPage() {
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
-    const handleThemeChange = (theme: string) => { setFormData({ ...formData, theme_name: theme }); };
 
-    // --- FUNGSI GENERATE & SALIN TAUTAN TAMU ---
+    // --- ATURAN PENGUNCIAN TEMA ---
+    const handleThemeChange = (themeId: string) => {
+        if (invitationId) {
+            alert('🔒 Tema terkunci! Undangan Anda sudah memasuki tahap pembayaran atau aktif. Silakan hubungi Admin jika ingin mengganti tema.');
+            return;
+        }
+        setFormData({ ...formData, theme_name: themeId });
+    };
+    // -----------------------------
+
     const handleGenerateGuestLink = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!guestInputName.trim()) {
-            alert('Silakan masukkan nama tamu terlebih dahulu.');
-            return;
-        }
-        if (!formData.slug) {
-            alert('Mohon isi dan simpan Tautan Cantik (URL) terlebih dahulu.');
-            return;
-        }
+        if (!guestInputName.trim()) { alert('Silakan masukkan nama tamu terlebih dahulu.'); return; }
+        if (!formData.slug) { alert('Mohon isi dan simpan Tautan Cantik (URL) terlebih dahulu.'); return; }
         const baseUrl = window.location.origin;
         const formattedLink = `${baseUrl}/${formData.slug}?to=${encodeURIComponent(guestInputName.trim())}`;
         setGeneratedGuestLink(formattedLink);
@@ -132,8 +132,8 @@ export default function DashboardPage() {
         navigator.clipboard.writeText(generatedGuestLink);
         alert('📋 Tautan khusus tamu berhasil disalin!');
     };
-    // ------------------------------------------
 
+    const adminWhatsAppUrl = "https://wa.me/6281234567890?text=" + encodeURIComponent("Halo Admin Creative Soft, saya ingin meminta bantuan untuk mengganti tema undangan saya.");
     const whatsappMessage = `Halo Admin Creative Soft, saya sudah transfer untuk aktivasi undangan dengan tautan: creative-soft.my.id/${formData.slug}. Berikut lampiran bukti transfernya.`;
     const whatsappLink = `https://wa.me/6281234567890?text=${encodeURIComponent(whatsappMessage)}`;
 
@@ -177,20 +177,55 @@ export default function DashboardPage() {
                 )}
 
                 <form onSubmit={handleSaveData} className="space-y-8">
-                    <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-50">
-                        <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2 mb-4">🎨 Pilihan Tema Desain</h3>
+
+                    {/* --- KOTAK PILIHAN TEMA DENGAN SISTEM KUNCI --- */}
+                    <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-50 relative">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                            <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">
+                                🎨 Pilihan Tema Desain
+                            </h3>
+                            {invitationId && (
+                                <span className="text-xs bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-medium border border-amber-200">
+                                    🔒 Tema Terkunci (Hubungi Admin untuk Ganti)
+                                </span>
+                            )}
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {THEME_OPTIONS.map((theme) => (
-                                <div key={theme.id} onClick={() => handleThemeChange(theme.id)} className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === theme.id ? theme.activeStyle : 'border-gray-200 bg-white hover:border-rose-100'}`}>
+                                <div
+                                    key={theme.id}
+                                    onClick={() => handleThemeChange(theme.id)}
+                                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === theme.id
+                                            ? theme.activeStyle
+                                            : 'border-gray-200 bg-white hover:border-rose-100'
+                                        } ${invitationId && formData.theme_name !== theme.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
                                     <div className="flex justify-between items-center mb-2">
-                                        <div className={`font-bold ${formData.theme_name === theme.id ? theme.textStyle : 'text-gray-700'}`}>{theme.icon} {theme.name}</div>
+                                        <div className={`font-bold ${formData.theme_name === theme.id ? theme.textStyle : 'text-gray-700'}`}>
+                                            {theme.icon} {theme.name}
+                                        </div>
                                         {formData.theme_name === theme.id && <span className={theme.textStyle}>✅</span>}
                                     </div>
                                     <div className="text-xs text-gray-500 leading-relaxed">{theme.desc}</div>
                                 </div>
                             ))}
                         </div>
+
+                        {invitationId && (
+                            <div className="mt-4 text-center">
+                                <a
+                                    href={adminWhatsAppUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-rose-600 hover:underline font-medium inline-flex items-center gap-1"
+                                >
+                                    💬 Ingin mengubah tema yang sudah dipilih? Klik untuk hubungi Admin
+                                </a>
+                            </div>
+                        )}
                     </div>
+                    {/* --------------------------------------------- */}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
@@ -238,7 +273,6 @@ export default function DashboardPage() {
                     </div>
                 </form>
 
-                {/* --- KOTAK GENERATOR TAUTAN TAMU KHUSUS --- */}
                 {invitationId && (
                     <div className="mt-10 bg-rose-50/60 p-6 rounded-2xl border border-rose-100">
                         <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2 mb-2">
@@ -279,7 +313,6 @@ export default function DashboardPage() {
                         )}
                     </div>
                 )}
-                {/* ------------------------------------------- */}
 
                 {invitationId && (
                     <div className="mt-12 pt-8 border-t-2 border-dashed border-rose-200">
