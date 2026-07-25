@@ -5,7 +5,7 @@ import { supabase } from '../../src/lib/supabase';
 import { useRouter } from 'next/navigation';
 import RsvpViewer from '../components/RsvpViewer';
 
-// --- DAFTAR KOLEKSI TEMA (Mudah ditambah di kemudian hari) ---
+// --- DAFTAR KOLEKSI TEMA ---
 const THEME_OPTIONS = [
     { id: 'minimalist', name: 'Romantis Pink', desc: 'Efek kaca embun dan nuansa merah muda.', activeStyle: 'border-rose-500 bg-rose-50', textStyle: 'text-rose-700', icon: '🌸' },
     { id: 'elegant', name: 'Gold Eksklusif', desc: 'Desain mewah gelap dengan ornamen emas.', activeStyle: 'border-amber-500 bg-amber-50', textStyle: 'text-amber-700', icon: '✨' },
@@ -148,7 +148,7 @@ export default function DashboardPage() {
 
                 <form onSubmit={handleSaveData} className="space-y-8">
 
-                    {/* --- KOTAK PILIHAN TEMA (Dinamis 5 Tema) --- */}
+                    {/* --- KOTAK PILIHAN TEMA --- */}
                     <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                         <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2 mb-4">
                             🎨 Pilihan Tema Desain
@@ -174,7 +174,6 @@ export default function DashboardPage() {
                             ))}
                         </div>
                     </div>
-                    {/* --------------------------------- */}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
