@@ -22,6 +22,10 @@ export default function DashboardPage() {
     const [isActive, setIsActive] = useState<boolean>(false);
     const [paymentStatus, setPaymentStatus] = useState<string>('pending');
 
+    // --- STATE BARU: Untuk mengontrol munculnya Popup QRIS ---
+    const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
+    // ---------------------------------------------------------
+
     const router = useRouter();
 
     const [formData, setFormData] = useState({
@@ -106,10 +110,14 @@ export default function DashboardPage() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
     const handleThemeChange = (theme: string) => { setFormData({ ...formData, theme_name: theme }); };
 
+    // Format pesan WhatsApp agar otomatis mendeteksi URL klien
+    const whatsappMessage = `Halo Admin Creative Soft, saya sudah transfer untuk aktivasi undangan dengan tautan: creative-soft.my.id/${formData.slug}. Berikut lampiran bukti transfernya.`;
+    const whatsappLink = `https://wa.me/6281234567890?text=${encodeURIComponent(whatsappMessage)}`;
+
     if (isLoading) return <div className="min-h-screen bg-rose-50 flex items-center justify-center"><div className="text-rose-600 animate-pulse font-serif text-xl">Memuat Ruang Kerja Anda... 🕊️</div></div>;
 
     return (
-        <div className="min-h-screen bg-[#FFF5F5] p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-[#FFF5F5] p-4 md:p-8 font-sans relative">
             <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100">
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-rose-100 pb-6 gap-4">
@@ -135,9 +143,12 @@ export default function DashboardPage() {
                             <a href={`/${formData.slug}?preview=true`} target="_blank" className="px-4 py-2.5 bg-white border border-amber-300 hover:bg-amber-100 text-amber-800 font-bold rounded-lg transition-colors text-sm text-center shadow-sm">
                                 👁️ Lihat Preview
                             </a>
-                            <a href="https://wa.me/6281234567890?text=Halo%20Admin%20Creative%20Soft..." target="_blank" className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors text-sm text-center shadow-sm">
+                            <button
+                                onClick={() => setIsPaymentPopupOpen(true)}
+                                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors text-sm text-center shadow-sm"
+                            >
                                 Konfirmasi Bayar
-                            </a>
+                            </button>
                         </div>
                     </div>
                 )}
@@ -193,7 +204,7 @@ export default function DashboardPage() {
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label><input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all text-gray-700" /></div>
                             <div><label className="block text-sm font-medium text-rose-900 mb-1">Alamat Lengkap Lokasi</label><textarea name="location_address" value={formData.location_address} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all resize-none" rows={3} /></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" placeholder="Ini QRIS untuk tamu Anda" /></div>
                         </div>
                     </div>
 
@@ -210,6 +221,60 @@ export default function DashboardPage() {
                     </div>
                 )}
             </div>
+
+            {/* --- POPUP QRIS PEMBAYARAN JASA --- */}
+            {isPaymentPopupOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in-up">
+                        <div className="bg-amber-500 p-6 text-center text-white">
+                            <h2 className="text-xl font-bold mb-1">Aktivasi Undangan</h2>
+                            <p className="text-amber-100 text-sm">Pindai QRIS di bawah untuk membayar</p>
+                        </div>
+
+                        <div className="p-8 text-center space-y-6">
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 inline-block">
+                                {/* GANTI GAMBAR INI DENGAN LINK GAMBAR QRIS BISNIS ANDA YANG ASLI */}
+                                <img
+                                    src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"
+                                    alt="QRIS Creative Soft"
+                                    className="w-48 h-48 mx-auto object-cover opacity-80"
+                                />
+                            </div>
+
+                            <div>
+                                <p className="text-gray-500 text-sm mb-1">Total Tagihan:</p>
+                                <p className="text-3xl font-bold text-gray-800">Rp 99.000</p>
+                            </div>
+
+                            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm border border-blue-100 text-left leading-relaxed">
+                                <strong>Langkah Konfirmasi:</strong><br />
+                                1. Simpan gambar ini atau pindai dengan aplikasi bank/e-wallet Anda.<br />
+                                2. Selesaikan pembayaran.<br />
+                                3. Klik tombol di bawah untuk mengirim bukti transfer.
+                            </div>
+
+                            <div className="flex flex-col gap-3 pt-4">
+                                <a
+                                    href={whatsappLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setIsPaymentPopupOpen(false)}
+                                    className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition-colors"
+                                >
+                                    ✅ Saya Sudah Transfer (Kirim Bukti)
+                                </a>
+                                <button
+                                    onClick={() => setIsPaymentPopupOpen(false)}
+                                    className="w-full py-3 text-gray-500 hover:bg-gray-100 font-medium rounded-xl transition-colors"
+                                >
+                                    Nanti Saja
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* ---------------------------------- */}
         </div>
     );
 }
