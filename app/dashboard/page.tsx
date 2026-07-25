@@ -5,6 +5,15 @@ import { supabase } from '../../src/lib/supabase';
 import { useRouter } from 'next/navigation';
 import RsvpViewer from '../components/RsvpViewer';
 
+// --- DAFTAR KOLEKSI TEMA (Mudah ditambah di kemudian hari) ---
+const THEME_OPTIONS = [
+    { id: 'minimalist', name: 'Romantis Pink', desc: 'Efek kaca embun dan nuansa merah muda.', activeStyle: 'border-rose-500 bg-rose-50', textStyle: 'text-rose-700', icon: '🌸' },
+    { id: 'elegant', name: 'Gold Eksklusif', desc: 'Desain mewah gelap dengan ornamen emas.', activeStyle: 'border-amber-500 bg-amber-50', textStyle: 'text-amber-700', icon: '✨' },
+    { id: 'floral', name: 'Botanical Garden', desc: 'Hiasan daun estetik dan bunga-bunga cantik.', activeStyle: 'border-emerald-500 bg-emerald-50', textStyle: 'text-emerald-700', icon: '🌿' },
+    { id: 'rustic', name: 'Rustic Vintage', desc: 'Nuansa hangat tekstur kayu dan warna bumi.', activeStyle: 'border-orange-500 bg-orange-50', textStyle: 'text-orange-700', icon: '🍂' },
+    { id: 'modern', name: 'Modern Minimalis', desc: 'Bersih, elegan, dengan tipografi yang tegas.', activeStyle: 'border-blue-500 bg-blue-50', textStyle: 'text-blue-700', icon: '💎' },
+];
+
 export default function DashboardPage() {
     const [userEmail, setUserEmail] = useState<string | null>('');
     const [userId, setUserId] = useState<string | null>(null);
@@ -12,7 +21,6 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
-    // 1. STATE BARU: Menambahkan 'theme_name' dengan default 'minimalist'
     const [formData, setFormData] = useState({
         slug: '',
         theme_name: 'minimalist',
@@ -52,7 +60,6 @@ export default function DashboardPage() {
                         .slice(0, 16);
                 }
 
-                // 2. MENGISI STATE: Mengambil tema lama dari database jika ada
                 setFormData({
                     slug: existingData.slug || '',
                     theme_name: existingData.theme_name || 'minimalist',
@@ -78,7 +85,6 @@ export default function DashboardPage() {
         e.preventDefault();
         setIsSaving(true);
 
-        // 3. PAYLOAD BARU: Mengirimkan pilihan tema ke Supabase
         const payload = {
             user_id: userId,
             slug: formData.slug.toLowerCase().replace(/\s+/g, '-'),
@@ -113,7 +119,6 @@ export default function DashboardPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Fungsi khusus untuk menangani perubahan tombol radio tema
     const handleThemeChange = (theme: string) => {
         setFormData({ ...formData, theme_name: theme });
     };
@@ -130,6 +135,7 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-[#FFF5F5] p-4 md:p-8 font-sans">
             <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-rose-100">
 
+                {/* Header Dasbor */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 border-b border-rose-100 pb-6 gap-4">
                     <div>
                         <h1 className="text-3xl font-serif font-bold text-rose-900 tracking-wide">Studio Undangan</h1>
@@ -142,35 +148,30 @@ export default function DashboardPage() {
 
                 <form onSubmit={handleSaveData} className="space-y-8">
 
-                    {/* --- KOTAK PILIHAN TEMA (BARU) --- */}
+                    {/* --- KOTAK PILIHAN TEMA (Dinamis 5 Tema) --- */}
                     <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                         <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2 mb-4">
                             🎨 Pilihan Tema Desain
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Opsi 1: Minimalist (Pink) */}
-                            <div
-                                onClick={() => handleThemeChange('minimalist')}
-                                className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === 'minimalist' ? 'border-rose-500 bg-rose-50' : 'border-gray-200 bg-white hover:border-rose-200'}`}
-                            >
-                                <div className="flex justify-between items-center mb-2">
-                                    <div className="font-bold text-rose-700">Romantis Pink</div>
-                                    {formData.theme_name === 'minimalist' && <span className="text-rose-500">✅</span>}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {THEME_OPTIONS.map((theme) => (
+                                <div
+                                    key={theme.id}
+                                    onClick={() => handleThemeChange(theme.id)}
+                                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === theme.id
+                                            ? theme.activeStyle
+                                            : 'border-gray-200 bg-white hover:border-rose-100'
+                                        }`}
+                                >
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div className={`font-bold ${formData.theme_name === theme.id ? theme.textStyle : 'text-gray-700'}`}>
+                                            {theme.icon} {theme.name}
+                                        </div>
+                                        {formData.theme_name === theme.id && <span className={theme.textStyle}>✅</span>}
+                                    </div>
+                                    <div className="text-xs text-gray-500 leading-relaxed">{theme.desc}</div>
                                 </div>
-                                <div className="text-xs text-gray-500">Desain cantik dengan efek kaca embun dan nuansa merah muda.</div>
-                            </div>
-
-                            {/* Opsi 2: Elegant (Gold/Hitam) */}
-                            <div
-                                onClick={() => handleThemeChange('elegant')}
-                                className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.theme_name === 'elegant' ? 'border-amber-500 bg-amber-50' : 'border-gray-200 bg-white hover:border-amber-200'}`}
-                            >
-                                <div className="flex justify-between items-center mb-2">
-                                    <div className="font-bold text-amber-700">Gold Eksklusif</div>
-                                    {formData.theme_name === 'elegant' && <span className="text-amber-500">✅</span>}
-                                </div>
-                                <div className="text-xs text-gray-500">Desain mewah dan premium dengan nuansa gelap dan emas.</div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                     {/* --------------------------------- */}
