@@ -1,5 +1,6 @@
 import { supabase } from '../../src/lib/supabase';
 import { notFound } from 'next/navigation';
+import Countdown from '../components/Countdown';
 
 // Tipe params sebagai Promise untuk Next.js 15
 export default async function InvitationPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -61,6 +62,9 @@ export default async function InvitationPage({ params }: { params: Promise<{ slu
                     <span className="text-rose-300 text-xl">✧</span>
                     <div className="h-[1px] w-16 bg-rose-200"></div>
                 </div>
+
+                {/* Komponen Hitung Mundur */}
+                <Countdown targetDate={invitation.event_date} />
 
                 {/* Kotak Detail Waktu & Lokasi */}
                 <div className="bg-rose-50/50 p-6 sm:p-8 rounded-2xl space-y-6 border border-rose-100 text-center shadow-inner">
