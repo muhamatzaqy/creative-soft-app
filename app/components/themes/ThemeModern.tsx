@@ -26,14 +26,14 @@ export default function ThemeModern({ invitation, guestName }: { invitation: any
                     </div>
                 </div>
 
-                <Countdown targetDate={invitation.event_date} theme="minimalist" />
+                <Countdown targetDate={invitation.event_date} theme="modern" />
 
                 <div className="bg-slate-50 p-6 rounded-2xl space-y-6 mt-10">
                     <p className="text-slate-700 font-bold">{eventDate} WIB</p>
                     <p className="text-slate-500">{invitation.location_address}</p>
                 </div>
 
-                <GuestBook invitationId={invitation.id} theme="minimalist" />
+                <GuestBook invitationId={invitation.id} theme="modern" />
             </div>
         </div>
     );

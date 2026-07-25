@@ -26,14 +26,14 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
                     </div>
                 </div>
 
-                <Countdown targetDate={invitation.event_date} theme="minimalist" />
+                <Countdown targetDate={invitation.event_date} theme="rustic" />
 
                 <div className="bg-orange-100/50 p-6 rounded-2xl space-y-6 border border-orange-200 mt-10">
                     <p className="text-orange-900 font-medium">{eventDate} WIB</p>
                     <p className="text-orange-800">{invitation.location_address}</p>
                 </div>
 
-                <GuestBook invitationId={invitation.id} theme="minimalist" />
+                <GuestBook invitationId={invitation.id} theme="rustic" />
             </div>
         </div>
     );

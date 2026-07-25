@@ -28,14 +28,14 @@ export default function ThemeFloral({ invitation, guestName }: { invitation: any
                     </div>
                 </div>
 
-                <Countdown targetDate={invitation.event_date} theme="minimalist" />
+                <Countdown targetDate={invitation.event_date} theme="elegant" />
 
                 <div className="bg-emerald-50/50 p-6 rounded-2xl space-y-6 border border-emerald-100 mt-10">
                     <p className="text-emerald-800 font-medium">{eventDate} WIB</p>
                     <p className="text-emerald-700">{invitation.location_address}</p>
                 </div>
 
-                <GuestBook invitationId={invitation.id} theme="minimalist" />
+                <GuestBook invitationId={invitation.id} theme="elegant" />
             </div>
         </div>
     );
