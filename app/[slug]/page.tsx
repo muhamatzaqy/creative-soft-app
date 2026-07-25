@@ -1,27 +1,25 @@
-// app/[slug]/page.tsx (Ilustrasi Struktur Masa Depan)
-
 import { supabase } from '../../src/lib/supabase';
 import { notFound } from 'next/navigation';
 
-// Import semua koleksi tema Anda
+// Hanya import tema yang sudah eksis
 import ThemeMinimalist from '../components/themes/ThemeMinimalist';
-import ThemeElegant from '../components/themes/ThemeElegant';
-import ThemeFloral from '../components/themes/ThemeFloral';
-// ... import tema lainnya ...
 
 export default async function InvitationPage({ params }: { params: Promise<{ slug: string }> }) {
-    const slug = (await params).slug;
+    const resolvedParams = await params;
+    const slug = resolvedParams.slug;
 
-    // 1. Ambil data dari database
-    const { data: invitation } = await supabase.from('invitations').select('*').eq('slug', slug).single();
-    if (!invitation) notFound();
+    const { data: invitation, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('slug', slug)
+        .single();
 
-    // 2. "Petugas Terminal" mengarahkan ke desain yang sesuai
+    if (error || !invitation) {
+        notFound();
+    }
+
+    // Mengarahkan ke desain yang sesuai
     switch (invitation.theme_name) {
-        case 'elegant':
-            return <ThemeElegant invitation={invitation} />;
-        case 'floral':
-            return <ThemeFloral invitation={invitation} />;
         case 'minimalist':
         default:
             return <ThemeMinimalist invitation={invitation} />;
