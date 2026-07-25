@@ -17,10 +17,13 @@ export default async function InvitationPage({
     const resolvedParams = await params;
     const slug = resolvedParams.slug;
 
-    // --- BACA URL UNTUK MODE PREVIEW ---
     const resolvedSearchParams = await searchParams;
     const isPreview = resolvedSearchParams.preview === 'true';
-    // -----------------------------------
+
+    // --- AMBIL NAMA TAMU DARI URL (CONTOH: ?to=Budi) ---
+    const guestParam = resolvedSearchParams.to;
+    const guestName = guestParam ? decodeURIComponent(Array.isArray(guestParam) ? guestParam[0] : guestParam) : 'Tamu Undangan';
+    // --------------------------------------------------
 
     const { data: invitation, error } = await supabase
         .from('invitations')
@@ -32,8 +35,6 @@ export default async function InvitationPage({
         notFound();
     }
 
-    // --- PENGUNCIAN UNDANGAN ---
-    // Jika belum lunas DAN bukan mode preview, tampilkan gembok
     if (!invitation.is_active && !isPreview) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-center">
@@ -48,26 +49,24 @@ export default async function InvitationPage({
         );
     }
 
-    // --- RENDER TEMA ---
+    // Kirim data `guestName` ke dalam komponen tema
     let ThemeComponent;
     switch (invitation.theme_name) {
-        case 'elegant': ThemeComponent = <ThemeElegant invitation={invitation} />; break;
-        case 'floral': ThemeComponent = <ThemeFloral invitation={invitation} />; break;
-        case 'rustic': ThemeComponent = <ThemeRustic invitation={invitation} />; break;
-        case 'modern': ThemeComponent = <ThemeModern invitation={invitation} />; break;
+        case 'elegant': ThemeComponent = <ThemeElegant invitation={invitation} guestName={guestName} />; break;
+        case 'floral': ThemeComponent = <ThemeFloral invitation={invitation} guestName={guestName} />; break;
+        case 'rustic': ThemeComponent = <ThemeRustic invitation={invitation} guestName={guestName} />; break;
+        case 'modern': ThemeComponent = <ThemeModern invitation={invitation} guestName={guestName} />; break;
         case 'minimalist':
-        default: ThemeComponent = <ThemeMinimalist invitation={invitation} />; break;
+        default: ThemeComponent = <ThemeMinimalist invitation={invitation} guestName={guestName} />; break;
     }
 
     return (
         <>
-            {/* SPANDUK ANTI-CURANG: Muncul jika mode preview dipakai di undangan belum lunas */}
             {!invitation.is_active && isPreview && (
                 <div className="fixed top-0 left-0 w-full bg-amber-500 text-black text-[10px] sm:text-xs text-center py-2 font-bold z-[100] shadow-md uppercase tracking-wider">
                     ⚠️ Mode Preview: Tautan ini tidak untuk disebarkan ke tamu (Belum Lunas)
                 </div>
             )}
-
             {ThemeComponent}
         </>
     );
