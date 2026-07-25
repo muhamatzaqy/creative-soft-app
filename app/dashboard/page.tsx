@@ -26,6 +26,11 @@ export default function DashboardPage() {
     const [guestInputName, setGuestInputName] = useState('');
     const [generatedGuestLink, setGeneratedGuestLink] = useState('');
 
+    // --- STATE BARU: Keamanan Edit (Mencegah Kepencet) ---
+    // Mode edit otomatis true jika user baru (belum ada data)
+    const [isEditMode, setIsEditMode] = useState(true);
+    // -----------------------------------------------------
+
     const router = useRouter();
 
     const [formData, setFormData] = useState({
@@ -47,6 +52,9 @@ export default function DashboardPage() {
                 setInvitationId(existingData.id);
                 setIsActive(existingData.is_active);
                 setPaymentStatus(existingData.payment_status);
+
+                // Jika data sudah ada, KUNCI form secara default
+                setIsEditMode(false);
 
                 let formattedDate = '';
                 if (existingData.event_date) {
@@ -76,12 +84,22 @@ export default function DashboardPage() {
 
     const handleSaveData = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // --- POPUP YAKIN EDIT ---
+        if (invitationId) {
+            const isConfirmed = window.confirm("Apakah Anda yakin ingin menyimpan perubahan data ini? Pastikan semua penulisan sudah benar.");
+            if (!isConfirmed) {
+                return; // Batalkan proses save jika user klik 'Cancel'
+            }
+        }
+        // ------------------------
+
         setIsSaving(true);
 
         const payload = {
             user_id: userId,
             slug: formData.slug.toLowerCase().replace(/\s+/g, '-'),
-            theme_name: formData.theme_name, // Tema dikunci tidak berubah setelah tersimpan pertama kali
+            theme_name: formData.theme_name,
             groom_name: formData.groom_name,
             bride_name: formData.bride_name,
             event_date: formData.event_date,
@@ -94,11 +112,13 @@ export default function DashboardPage() {
                 const { error } = await supabase.from('invitations').update(payload).eq('id', invitationId);
                 if (error) throw error;
                 alert('💖 Data undangan berhasil diperbarui!');
+                setIsEditMode(false); // Kunci kembali form setelah berhasil disimpan
             } else {
                 const { data, error } = await supabase.from('invitations').insert([payload]).select().single();
                 if (error) throw error;
                 if (data) setInvitationId(data.id);
                 alert('🎉 Data undangan baru berhasil disimpan! Tema Anda kini telah dikunci.');
+                setIsEditMode(false); // Kunci form setelah simpan pertama kali
             }
         } catch (error: any) {
             alert('Gagal menyimpan data: ' + error.message);
@@ -109,15 +129,13 @@ export default function DashboardPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
 
-    // --- ATURAN PENGUNCIAN TEMA ---
     const handleThemeChange = (themeId: string) => {
         if (invitationId) {
-            alert('🔒 Tema terkunci! Undangan Anda sudah memasuki tahap pembayaran atau aktif. Silakan hubungi Admin jika ingin mengganti tema.');
+            alert('🔒 Tema terkunci! Undangan Anda sudah tersimpan. Silakan hubungi Admin jika ingin mengganti tema.');
             return;
         }
         setFormData({ ...formData, theme_name: themeId });
     };
-    // -----------------------------
 
     const handleGenerateGuestLink = (e: React.FormEvent) => {
         e.preventDefault();
@@ -132,6 +150,9 @@ export default function DashboardPage() {
         navigator.clipboard.writeText(generatedGuestLink);
         alert('📋 Tautan khusus tamu berhasil disalin!');
     };
+
+    // Style khusus untuk input yang di-disable (agar terlihat terkunci)
+    const inputClasses = "w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all focus:ring-2 focus:ring-rose-300 disabled:bg-rose-50/50 disabled:text-gray-500 disabled:border-rose-100 disabled:cursor-not-allowed";
 
     const adminWhatsAppUrl = "https://wa.me/6281234567890?text=" + encodeURIComponent("Halo Admin Creative Soft, saya ingin meminta bantuan untuk mengganti tema undangan saya.");
     const whatsappMessage = `Halo Admin Creative Soft, saya sudah transfer untuk aktivasi undangan dengan tautan: creative-soft.my.id/${formData.slug}. Berikut lampiran bukti transfernya.`;
@@ -159,7 +180,7 @@ export default function DashboardPage() {
                             <div className="text-3xl">⚠️</div>
                             <div>
                                 <h3 className="font-bold text-amber-800">Undangan Anda Sedang Ditangguhkan</h3>
-                                <p className="text-sm text-amber-700 mt-1">Status Pembayaran Anda saat ini: <span className="font-bold uppercase">{paymentStatus}</span>. Tautan undangan publik terkunci.</p>
+                                <p className="text-sm text-amber-700 mt-1">Status Pembayaran Anda saat ini: <span className="font-bold uppercase">{paymentStatus}</span>. Tautan publik terkunci.</p>
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
@@ -178,7 +199,6 @@ export default function DashboardPage() {
 
                 <form onSubmit={handleSaveData} className="space-y-8">
 
-                    {/* --- KOTAK PILIHAN TEMA DENGAN SISTEM KUNCI --- */}
                     <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-50 relative">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">
@@ -186,7 +206,7 @@ export default function DashboardPage() {
                             </h3>
                             {invitationId && (
                                 <span className="text-xs bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-medium border border-amber-200">
-                                    🔒 Tema Terkunci (Hubungi Admin untuk Ganti)
+                                    🔒 Tema Terkunci (Hubungi Admin)
                                 </span>
                             )}
                         </div>
@@ -214,29 +234,25 @@ export default function DashboardPage() {
 
                         {invitationId && (
                             <div className="mt-4 text-center">
-                                <a
-                                    href={adminWhatsAppUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-rose-600 hover:underline font-medium inline-flex items-center gap-1"
-                                >
-                                    💬 Ingin mengubah tema yang sudah dipilih? Klik untuk hubungi Admin
+                                <a href={adminWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-rose-600 hover:underline font-medium inline-flex items-center gap-1">
+                                    💬 Ingin mengubah tema? Klik untuk hubungi Admin
                                 </a>
                             </div>
                         )}
                     </div>
-                    {/* --------------------------------------------- */}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💍 Data Mempelai</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Pria</label><input type="text" name="groom_name" value={formData.groom_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Wanita</label><input type="text" name="bride_name" value={formData.bride_name} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" /></div>
+
+                            {/* Tambahkan disabled={!isEditMode} ke semua input */}
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Pria</label><input type="text" name="groom_name" value={formData.groom_name} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Nama Wanita</label><input type="text" name="bride_name" value={formData.bride_name} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} /></div>
 
                             <div>
                                 <label className="block text-sm font-medium text-rose-900 mb-1">Tautan Cantik (URL)</label>
-                                <input type="text" name="slug" value={formData.slug} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all bg-white" />
+                                <input type="text" name="slug" value={formData.slug} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} />
 
                                 {invitationId && (
                                     <div className="flex flex-wrap gap-2 mt-3">
@@ -260,17 +276,49 @@ export default function DashboardPage() {
                         <div className="space-y-5 bg-rose-50/30 p-6 rounded-xl border border-rose-50">
                             <h3 className="font-serif font-semibold text-xl text-rose-800 flex items-center gap-2">💌 Acara & Hadiah</h3>
                             <div className="h-px w-full bg-rose-100 mb-4"></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label><input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all text-gray-700" /></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Alamat Lengkap Lokasi</label><textarea name="location_address" value={formData.location_address} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all resize-none" rows={3} /></div>
-                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required className="w-full px-4 py-2.5 border border-rose-200 rounded-lg outline-none transition-all" placeholder="Ini QRIS untuk tamu Anda" /></div>
+
+                            {/* Tambahkan disabled={!isEditMode} */}
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tanggal & Waktu Acara</label><input type="datetime-local" name="event_date" value={formData.event_date} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Alamat Lengkap Lokasi</label><textarea name="location_address" value={formData.location_address} onChange={handleChange} required disabled={!isEditMode} className={`${inputClasses} resize-none`} rows={3} /></div>
+                            <div><label className="block text-sm font-medium text-rose-900 mb-1">Tautan Gambar QRIS</label><input type="url" name="qris_image_url" value={formData.qris_image_url} onChange={handleChange} required disabled={!isEditMode} className={inputClasses} placeholder="Ini QRIS untuk tamu Anda" /></div>
                         </div>
                     </div>
 
-                    <div className="pt-8 border-t border-rose-100 flex justify-end">
-                        <button type="submit" disabled={isSaving} className="w-full md:w-auto px-8 py-3.5 text-white bg-rose-600 rounded-full hover:bg-rose-700 font-medium tracking-wide disabled:bg-rose-300 transition-all duration-300 shadow-md">
-                            {isSaving ? 'Menyimpan Cinta...' : (invitationId ? 'Perbarui Undangan' : 'Simpan Undangan')}
-                        </button>
+                    {/* --- AREA TOMBOL EDIT / SIMPAN (BARU) --- */}
+                    <div className="pt-8 border-t border-rose-100 flex flex-wrap justify-end gap-3">
+                        {invitationId && !isEditMode ? (
+                            <button
+                                type="button"
+                                onClick={() => setIsEditMode(true)}
+                                className="w-full md:w-auto px-8 py-3.5 bg-white border-2 border-rose-600 text-rose-600 hover:bg-rose-50 font-bold rounded-full transition-all duration-300 shadow-sm"
+                            >
+                                ✏️ Edit Data Undangan
+                            </button>
+                        ) : (
+                            <>
+                                {invitationId && isEditMode && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsEditMode(false);
+                                            // Optional: Bisa juga reload halaman atau fetch ulang data agar kembali ke data awal
+                                        }}
+                                        className="w-full md:w-auto px-8 py-3.5 bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium rounded-full transition-all duration-300"
+                                    >
+                                        Batal Edit
+                                    </button>
+                                )}
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="w-full md:w-auto px-8 py-3.5 text-white bg-rose-600 rounded-full hover:bg-rose-700 font-medium tracking-wide disabled:bg-rose-300 transition-all duration-300 shadow-md"
+                                >
+                                    {isSaving ? 'Menyimpan Cinta...' : (invitationId ? '💾 Simpan Perubahan' : 'Simpan Undangan')}
+                                </button>
+                            </>
+                        )}
                     </div>
+                    {/* -------------------------------------- */}
                 </form>
 
                 {invitationId && (
