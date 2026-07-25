@@ -7,16 +7,23 @@ import GuestBook from '../GuestBook';
 export default function ThemeMinimalist({ invitation, guestName }: { invitation: any, guestName: string }) {
     const [isOpened, setIsOpened] = useState(false);
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+    const [isMounted, setIsMounted] = useState(false); // Solusi anti-error Next.js
     const contentRef = useRef<HTMLDivElement>(null);
 
-    const eventDate = new Date(invitation.event_date).toLocaleDateString('id-ID', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    });
-    const eventTime = new Date(invitation.event_date).toLocaleTimeString('id-ID', {
-        hour: '2-digit', minute: '2-digit',
-    });
+    // Mencegah error Hydration (Tombol mati) dengan menunggu halaman dimuat
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
-    // Generate link Google Maps otomatis berdasarkan teks alamat
+    const eventDate = isMounted ? new Date(invitation.event_date).toLocaleDateString('id-ID', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    }) : 'Menyiapkan tanggal...';
+
+    const eventTime = isMounted ? new Date(invitation.event_date).toLocaleTimeString('id-ID', {
+        hour: '2-digit', minute: '2-digit',
+    }) : '...';
+
+    // Generate link Google Maps otomatis
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(invitation.location_address)}`;
 
     // Fitur Scroll Otomatis Lambat
@@ -25,11 +32,10 @@ export default function ThemeMinimalist({ invitation, guestName }: { invitation:
         if (isAutoScrolling) {
             scrollInterval = setInterval(() => {
                 window.scrollBy({ top: 1, behavior: 'auto' });
-                // Hentikan jika sudah mencapai bawah
                 if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
                     setIsAutoScrolling(false);
                 }
-            }, 30); // Semakin besar angkanya, semakin lambat scroll-nya
+            }, 30);
         }
         return () => clearInterval(scrollInterval);
     }, [isAutoScrolling]);
@@ -38,21 +44,23 @@ export default function ThemeMinimalist({ invitation, guestName }: { invitation:
     const handleOpen = () => {
         setIsOpened(true);
         setTimeout(() => {
-            contentRef.current?.scrollIntoView({ behavior: 'smooth' });
+            contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 300);
     };
 
     return (
         <div className="bg-slate-100 min-h-screen font-sans selection:bg-rose-200">
-            {/* WADAH UTAMA (Responsif: HP full, Desktop seperti mockup aplikasi) */}
-            <div className="max-w-md mx-auto bg-white min-h-screen shadow-[0_0_40px_rgba(0,0,0,0.05)] relative overflow-hidden">
+            {/* WADAH UTAMA (Responsif) */}
+            <div className="max-w-md mx-auto bg-white min-h-screen shadow-2xl relative overflow-hidden">
 
                 {/* ================= BAGIAN SAMPUL (COVER) ================= */}
-                <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-rose-50 to-white transition-transform duration-1000 ease-in-out ${isOpened ? '-translate-y-full' : 'translate-y-0'}`}>
-                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/floral-paper.png')] mix-blend-multiply"></div>
+                {/* Mengubah 'fixed' menjadi 'absolute' agar rapi di desktop & HP */}
+                <div className={`absolute top-0 left-0 w-full h-screen z-50 flex flex-col items-center justify-center bg-gradient-to-br from-rose-50 to-white transition-transform duration-1000 ease-in-out ${isOpened ? '-translate-y-full' : 'translate-y-0'}`}>
 
-                    {/* Foto Cover Placeholder */}
-                    <div className="w-48 h-48 rounded-full overflow-hidden mb-8 border-4 border-white shadow-xl animate-pulse">
+                    {/* Tambahan pointer-events-none agar tekstur tidak menghalangi klik tombol */}
+                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/floral-paper.png')] mix-blend-multiply pointer-events-none"></div>
+
+                    <div className="w-48 h-48 rounded-full overflow-hidden mb-8 border-4 border-white shadow-xl animate-pulse relative z-10">
                         <img
                             src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600&auto=format&fit=crop"
                             alt="Prewedding Cover"
@@ -60,19 +68,20 @@ export default function ThemeMinimalist({ invitation, guestName }: { invitation:
                         />
                     </div>
 
-                    <p className="text-xs text-rose-400 uppercase tracking-[0.3em] font-semibold mb-4">Pernikahan</p>
-                    <h1 className="text-5xl font-serif text-gray-800 text-center mb-8">
+                    <p className="text-xs text-rose-400 uppercase tracking-[0.3em] font-semibold mb-4 relative z-10">Pernikahan</p>
+                    <h1 className="text-5xl font-serif text-gray-800 text-center mb-8 relative z-10">
                         {invitation.groom_name} <br /> <span className="text-3xl text-rose-300 italic">&</span> <br /> {invitation.bride_name}
                     </h1>
 
-                    <div className="bg-white/60 backdrop-blur-sm border border-rose-100 p-5 rounded-2xl text-center mb-8 shadow-sm">
+                    <div className="bg-white/80 backdrop-blur-sm border border-rose-100 p-5 rounded-2xl text-center mb-8 shadow-sm relative z-10">
                         <p className="text-xs text-rose-600 uppercase tracking-widest mb-1 font-medium">Kepada Yth.</p>
                         <h2 className="text-lg font-bold text-gray-800 font-serif">{guestName}</h2>
                     </div>
 
                     <button
+                        type="button"
                         onClick={handleOpen}
-                        className="px-8 py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-full font-medium tracking-wide transition-all shadow-lg shadow-rose-200 flex items-center gap-2"
+                        className="px-8 py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-full font-medium tracking-wide transition-all shadow-lg shadow-rose-200 flex items-center gap-2 relative z-10"
                     >
                         💌 Buka Undangan
                     </button>
@@ -84,6 +93,7 @@ export default function ThemeMinimalist({ invitation, guestName }: { invitation:
                     {/* Tombol Floating: Auto Scroll */}
                     {isOpened && (
                         <button
+                            type="button"
                             onClick={() => setIsAutoScrolling(!isAutoScrolling)}
                             className="fixed bottom-6 right-6 z-40 bg-white/90 backdrop-blur-md p-4 rounded-full shadow-xl border border-rose-100 text-rose-500 transition-all hover:bg-rose-50"
                         >
@@ -91,7 +101,7 @@ export default function ThemeMinimalist({ invitation, guestName }: { invitation:
                         </button>
                     )}
 
-                    {/* 1. Hero Section (Foto Besar) */}
+                    {/* 1. Hero Section */}
                     <div className="relative h-[60vh] w-full">
                         <img
                             src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?q=80&w=800&auto=format&fit=crop"
@@ -107,7 +117,7 @@ export default function ThemeMinimalist({ invitation, guestName }: { invitation:
                         </div>
                     </div>
 
-                    {/* 2. Ayat Suci / Kutipan */}
+                    {/* 2. Ayat Suci */}
                     <div className="px-8 py-16 text-center bg-[url('https://www.transparenttextures.com/patterns/floral-paper.png')] bg-rose-50/30">
                         <div className="w-8 h-8 mx-auto bg-rose-200 rounded-full flex items-center justify-center text-white mb-6">✧</div>
                         <p className="text-gray-600 italic text-sm leading-relaxed mb-4">
@@ -154,7 +164,7 @@ export default function ThemeMinimalist({ invitation, guestName }: { invitation:
                         <Countdown targetDate={invitation.event_date} theme="minimalist" />
                     </div>
 
-                    {/* 5. Galeri Foto Sederhana (Grid) */}
+                    {/* 5. Galeri Foto */}
                     <div className="px-4 py-8">
                         <h2 className="text-2xl font-serif text-gray-800 text-center mb-6">Momen Kami</h2>
                         <div className="grid grid-cols-2 gap-2">
