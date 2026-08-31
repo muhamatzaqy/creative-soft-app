@@ -5,7 +5,8 @@ import Countdown from '../Countdown';
 import GuestBook from '../GuestBook';
 
 // --- KOMPONEN ANIMASI SCROLL (INTERSECTION OBSERVER) ---
-const FadeIn = ({ children, delay = 0, direction = 'up' }: { children: ReactNode, delay?: number, direction?: 'up' | 'none' }) => {
+// --- KOMPONEN ANIMASI SCROLL (INTERSECTION OBSERVER) ---
+const FadeIn = ({ children, delay = 0, direction = 'up', className = '' }: { children: ReactNode, delay?: number, direction?: 'up' | 'none', className?: string }) => {
     const [isVisible, setIsVisible] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -21,7 +22,7 @@ const FadeIn = ({ children, delay = 0, direction = 'up' }: { children: ReactNode
     
     return (
         <div ref={ref} 
-             className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isVisible ? 'opacity-100 translate-y-0' : `opacity-0 ${translateY}`}`} 
+             className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isVisible ? 'opacity-100 translate-y-0' : `opacity-0 ${translateY}`} ${className}`} 
              style={{ transitionDelay: `${delay}ms` }}>
             {children}
         </div>
