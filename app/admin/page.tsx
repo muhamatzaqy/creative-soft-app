@@ -11,6 +11,8 @@ type InvitationAdmin = {
     bride_name: string;
     payment_status: string;
     is_active: boolean;
+    is_data_locked: boolean; // Field baru
+    payment_proof_url: string | null; // Field baru untuk melihat resi
     created_at: string;
     user_id: string;
 };
@@ -18,7 +20,7 @@ type InvitationAdmin = {
 export default function AdminDashboardPage() {
     const [invitations, setInvitations] = useState<InvitationAdmin[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState(''); // FITUR BARU: Pencarian Data
+    const [searchTerm, setSearchTerm] = useState(''); 
     const router = useRouter();
 
     const ADMIN_EMAIL = "admin@creative-soft.my.id";
@@ -31,7 +33,7 @@ export default function AdminDashboardPage() {
         }
 
         if (user.email !== ADMIN_EMAIL && !user.email?.includes('admin')) {
-            // router.push('/dashboard'); // Buka komentar ini saat di-deploy
+            // router.push('/dashboard'); // Buka komentar ini saat di-deploy ke publik
         }
 
         const { data, error } = await supabase
@@ -49,15 +51,17 @@ export default function AdminDashboardPage() {
         fetchAllInvitations();
     }, [router]);
 
-    const handleToggleActive = async (id: string, currentStatus: boolean) => {
-        const newActiveStatus = !currentStatus;
-        const newPaymentStatus = newActiveStatus ? 'paid' : 'pending';
+    const handleToggleActive = async (id: string, currentActiveStatus: boolean) => {
+        const newActiveStatus = !currentActiveStatus;
+        const newPaymentStatus = newActiveStatus ? 'paid' : 'unpaid';
+        const newDataLocked = !newActiveStatus; // Jika aktif (true), data_locked jadi (false)
 
         const { error } = await supabase
             .from('invitations')
             .update({
                 is_active: newActiveStatus,
-                payment_status: newPaymentStatus
+                payment_status: newPaymentStatus,
+                is_data_locked: newDataLocked // INI KUNCI UTAMANYA
             })
             .eq('id', id);
 
@@ -65,9 +69,14 @@ export default function AdminDashboardPage() {
             alert('Gagal memperbarui status: ' + error.message);
         } else {
             setInvitations(invitations.map(inv =>
-                inv.id === id ? { ...inv, is_active: newActiveStatus, payment_status: newPaymentStatus } : inv
+                inv.id === id ? { 
+                    ...inv, 
+                    is_active: newActiveStatus, 
+                    payment_status: newPaymentStatus,
+                    is_data_locked: newDataLocked 
+                } : inv
             ));
-            alert('🎉 Status undangan berhasil diperbarui!');
+            alert(newActiveStatus ? '🎉 Pembayaran disetujui! Form klien telah dibuka.' : '🔒 Klien dinonaktifkan.');
         }
     };
 
@@ -116,14 +125,14 @@ export default function AdminDashboardPage() {
                         <div className="absolute right-0 top-0 w-20 h-20 bg-emerald-50 rounded-bl-full z-0"></div>
                         <div className="relative z-10">
                             <div className="text-emerald-600 text-sm font-semibold mb-2 uppercase tracking-wide">Aktif (Lunas)</div>
-                            <div className="text-4xl font-bold text-slate-900">{invitations.filter(i => i.is_active).length}</div>
+                            <div className="text-4xl font-bold text-slate-900">{invitations.filter(i => i.payment_status === 'paid').length}</div>
                         </div>
                     </div>
                     <div className="bg-white p-6 rounded-3xl border border-amber-100 shadow-sm relative overflow-hidden">
                         <div className="absolute right-0 top-0 w-20 h-20 bg-amber-50 rounded-bl-full z-0"></div>
                         <div className="relative z-10">
-                            <div className="text-amber-600 text-sm font-semibold mb-2 uppercase tracking-wide">Menunggu Pembayaran</div>
-                            <div className="text-4xl font-bold text-slate-900">{invitations.filter(i => !i.is_active).length}</div>
+                            <div className="text-amber-600 text-sm font-semibold mb-2 uppercase tracking-wide">Menunggu Verifikasi</div>
+                            <div className="text-4xl font-bold text-slate-900">{invitations.filter(i => i.payment_status === 'waiting_verification').length}</div>
                         </div>
                     </div>
                 </div>
@@ -147,19 +156,20 @@ export default function AdminDashboardPage() {
                     </div>
                     
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[700px]">
+                        <table className="w-full text-left border-collapse min-w-[850px]">
                             <thead>
                                 <tr className="bg-slate-50 text-xs uppercase text-slate-500 tracking-wider">
                                     <th className="p-5 font-semibold border-b border-slate-200">Data Mempelai</th>
                                     <th className="p-5 font-semibold border-b border-slate-200">Tautan (URL)</th>
-                                    <th className="p-5 font-semibold border-b border-slate-200">Status Undangan</th>
+                                    <th className="p-5 font-semibold border-b border-slate-200">Bukti Pembayaran</th>
+                                    <th className="p-5 font-semibold border-b border-slate-200">Status</th>
                                     <th className="p-5 font-semibold border-b border-slate-200 text-right">Aksi Admin</th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
                                 {filteredInvitations.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="p-8 text-center text-slate-500 italic bg-slate-50/50">
+                                        <td colSpan={5} className="p-8 text-center text-slate-500 italic bg-slate-50/50">
                                             {invitations.length === 0 ? 'Belum ada klien terdaftar.' : 'Pencarian tidak ditemukan.'}
                                         </td>
                                     </tr>
@@ -176,12 +186,24 @@ export default function AdminDashboardPage() {
                                                 </a>
                                             </td>
                                             <td className="p-5">
+                                                {inv.payment_proof_url ? (
+                                                    <a href={inv.payment_proof_url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 inline-flex items-center gap-1 transition-colors">
+                                                        🖼️ Lihat Bukti
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">Belum Upload</span>
+                                                )}
+                                            </td>
+                                            <td className="p-5">
                                                 <div className="flex flex-col gap-2 items-start">
-                                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border ${inv.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                                        💰 {inv.payment_status}
+                                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border ${
+                                                        inv.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                                                        inv.payment_status === 'waiting_verification' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                                                    }`}>
+                                                        💰 {inv.payment_status.replace('_', ' ')}
                                                     </span>
-                                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border ${inv.is_active ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                                                        {inv.is_active ? '🌐 Publik Aktif' : '🔒 Terkunci'}
+                                                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border ${!inv.is_data_locked ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                                        {!inv.is_data_locked ? '🔓 Form Terbuka' : '🔒 Form Terkunci'}
                                                     </span>
                                                 </div>
                                             </td>
@@ -193,7 +215,7 @@ export default function AdminDashboardPage() {
                                                             : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'
                                                         }`}
                                                 >
-                                                    {inv.is_active ? 'Kunci (Nonaktifkan)' : '✨ Verifikasi Lunas'}
+                                                    {inv.is_active ? 'Kunci & Nonaktifkan' : '✨ Setujui & Buka Form'}
                                                 </button>
                                             </td>
                                         </tr>
