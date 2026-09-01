@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import Countdown from '../Countdown';
 import GuestBook from '../GuestBook';
+import BackgroundMusic from '../BackgroundMusic';
 
 // --- KOMPONEN ANIMASI SCROLL (INTERSECTION OBSERVER) ---
 const FadeIn = ({ children, delay = 0, direction = 'up', className = '' }: { children: ReactNode, delay?: number, direction?: 'up' | 'none', className?: string }) => {
@@ -56,6 +57,9 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
     const autoMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(invitation.location_address)}`;
     const finalMapsUrl = invitation.google_maps_link ? invitation.google_maps_link : autoMapsUrl;
     const heroImage = invitation.hero_image_url || "https://images.unsplash.com/photo-1520854221256-17451cc331bf?q=80&w=800&auto=format&fit=crop";
+    
+    // Ambil URL musik dari database, fallback ke default lagu jika kosong
+    const musicSource = invitation.music_url || '/music/The Paper Kites - Bloom.mp3';
 
     const hasQris = Boolean(invitation.qris_image_url && invitation.qris_image_url.trim() !== '');
     const hasBank = Boolean(invitation.bank_account_number && invitation.bank_account_number.trim() !== '');
@@ -96,6 +100,9 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
             <div className="bg-[#FBF9F6] min-h-[100dvh] font-montserrat text-[#36312D] relative overflow-hidden selection:bg-[#BCA993] selection:text-white">
                 <div className="paper-texture"></div>
 
+                {/* PEMUTAR MUSIK LATAR (BACKGROUND MUSIC) */}
+                <BackgroundMusic audioUrl={musicSource} isOpened={isOpened} />
+
                 {/* =========================================
                     SAMPUL DIGITAL (COVER ENVELOPE)
                 ========================================= */}
@@ -103,9 +110,9 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
                     isOpened ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
                 }`}>
                     
-                    {/* ORNAMEN 4.PNG (White Roses/Leaves) - Sudut Kiri Atas & Kanan Bawah */}
-                    <img src="/4.png" alt="Floral Ornament" className="absolute top-0 left-0 w-48 sm:w-72 lg:w-96 opacity-90 pointer-events-none z-0" />
-                    <img src="/4.png" alt="Floral Ornament" className="absolute bottom-0 right-0 w-48 sm:w-72 lg:w-96 opacity-90 pointer-events-none transform rotate-180 z-0" />
+                    {/* Ornamen SVG Fallback Aman */}
+                    <div className="absolute top-0 left-0 w-32 h-32 opacity-20 bg-[radial-gradient(#4A5342_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+                    <div className="absolute bottom-0 right-0 w-32 h-32 opacity-20 bg-[radial-gradient(#4A5342_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
 
                     <div className="max-w-2xl w-full border border-[#DCD3C6] p-8 sm:p-16 relative bg-white/50 backdrop-blur-sm shadow-[0_20px_40px_rgba(54,49,45,0.03)] z-10">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-[#F4F1EA] flex items-center justify-center">
@@ -139,9 +146,6 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
                 ========================================= */}
                 <div ref={contentRef} className={`relative transition-opacity duration-1000 ${isOpened ? 'opacity-100' : 'opacity-0 h-screen overflow-hidden'}`}>
                     
-                    {/* ORNAMEN 3.PNG (Warm Autumn Floral) - Background Aksen Halus */}
-                    <img src="/3.png" alt="Floral Decor" className="absolute top-40 right-0 w-64 sm:w-96 opacity-30 pointer-events-none transform -scale-x-100 z-0" />
-
                     {/* HERO SECTION */}
                     <section className="relative min-h-[90vh] sm:min-h-screen flex items-center justify-center p-6 md:p-12 lg:p-24 w-full max-w-[1920px] mx-auto z-10">
                         <div className="flex flex-col lg:flex-row items-center w-full max-w-6xl gap-12 lg:gap-24">
@@ -183,9 +187,6 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
                         </FadeIn>
 
                         <div className="bg-white/70 backdrop-blur-sm border border-[#E8E2D9] p-8 sm:p-16 shadow-sm relative overflow-hidden">
-                            {/* ORNAMEN 4.PNG di Card Event */}
-                            <img src="/4.png" alt="Decor" className="absolute -bottom-10 -left-10 w-48 sm:w-64 opacity-20 pointer-events-none transform -scale-x-100" />
-                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-8 items-center relative z-10">
                                 <FadeIn delay={200} className="text-center md:border-r md:border-[#E8E2D9] md:pr-8">
                                     <div className="text-[#C5B49C] text-2xl mb-4">✧</div>
@@ -247,7 +248,7 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
 
                     <ElegantDivider />
 
-                    {/* WEDDING GIFT / AMPLOP DIGITAL SECTION (DARK THEME) */}
+                    {/* WEDDING GIFT / AMPLOP DIGITAL SECTION */}
                     {(hasQris || hasBank) && (
                         <section className="py-20 px-6 w-full max-w-3xl mx-auto">
                             <FadeIn>
@@ -263,22 +264,21 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
                             <div className="flex flex-col gap-8">
                                 {hasBank && (
                                     <FadeIn delay={200}>
-                                        <div className="bg-[#1C1F18] text-[#F4F1EA] p-8 sm:p-14 rounded-xl relative overflow-hidden shadow-2xl">
-                                            
-                                            {/* ORNAMEN 1.JPG & 5.JPG (Dengan Trik Mix-Blend-Screen) */}
-                                            {/* Hitam pada gambar akan hilang dan menyatu dengan background hijau gelap! */}
-                                            <img src="/1.jpg" alt="Dark Floral" className="absolute top-0 left-0 w-48 sm:w-72 opacity-60 mix-blend-screen pointer-events-none z-0" />
-                                            <img src="/5.jpg" alt="Dark Floral" className="absolute bottom-0 right-0 w-48 sm:w-72 opacity-60 mix-blend-screen pointer-events-none transform rotate-180 z-0" />
+                                        {/* Diperbaiki: Card Bank kini bersih dari gambar broken, menggunakan tema gelap elegan yang rapi */}
+                                        <div className="bg-[#1C1F18] text-[#F4F1EA] p-8 sm:p-14 rounded-2xl relative overflow-hidden shadow-2xl border border-[#3A4233]">
+                                            <div className="absolute top-0 right-0 w-48 h-48 bg-[#4A5342]/20 rounded-full blur-3xl pointer-events-none"></div>
                                             
                                             <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                                                 <div>
-                                                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[#A3AA9B] mb-2">{invitation.bank_name}</p>
-                                                    <p className="text-2xl sm:text-3xl font-montserrat font-medium tracking-widest mb-1 drop-shadow-md">{invitation.bank_account_number}</p>
+                                                    <span className="inline-block px-3 py-1 bg-white/10 text-[#C5B49C] text-[10px] font-bold uppercase tracking-widest rounded-full mb-3">
+                                                        {invitation.bank_name}
+                                                    </span>
+                                                    <p className="text-2xl sm:text-3xl font-montserrat font-medium tracking-widest mb-1 text-white">{invitation.bank_account_number}</p>
                                                     <p className="text-sm font-cormorant italic text-[#DCD3C6]">a.n {invitation.bank_account_name}</p>
                                                 </div>
                                                 <button 
                                                     onClick={() => copyToClipboard(invitation.bank_account_number)} 
-                                                    className="w-full sm:w-auto px-6 py-3 border border-[#A3AA9B]/50 hover:bg-white/20 text-[#F4F1EA] text-[10px] uppercase tracking-[0.2em] transition-colors backdrop-blur-sm"
+                                                    className="w-full sm:w-auto px-6 py-3 bg-[#4A5342] hover:bg-[#3A4233] text-white text-[10px] uppercase tracking-[0.2em] font-semibold rounded-xl transition-all shadow-md"
                                                 >
                                                     Copy Account
                                                 </button>
@@ -289,9 +289,9 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
 
                                 {hasQris && (
                                     <FadeIn delay={400}>
-                                        <div className="bg-white p-8 sm:p-12 border border-[#E8E2D9] flex flex-col items-center text-center shadow-sm relative overflow-hidden rounded-xl">
-                                            <img src={invitation.qris_image_url} alt="QRIS" className="w-48 sm:w-64 h-auto object-contain mb-6 relative z-10" />
-                                            <p className="text-[10px] uppercase tracking-[0.2em] text-[#8C8476] relative z-10">Scan to send gift via QRIS</p>
+                                        <div className="bg-white p-8 sm:p-12 border border-[#E8E2D9] flex flex-col items-center text-center shadow-sm relative overflow-hidden rounded-2xl">
+                                            <img src={invitation.qris_image_url} alt="QRIS" className="w-48 sm:w-64 h-auto object-contain mb-6 relative z-10 rounded-lg border border-slate-100" />
+                                            <p className="text-[10px] uppercase tracking-[0.2em] text-[#8C8476] relative z-10 font-semibold">Scan to send gift via QRIS</p>
                                         </div>
                                     </FadeIn>
                                 )}
@@ -302,10 +302,7 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
                     {/* GUESTBOOK & RSVP SECTION */}
                     <section className="py-20 px-6 w-full max-w-4xl mx-auto">
                         <FadeIn>
-                            <div className="bg-white/60 backdrop-blur-sm border border-[#E8E2D9] p-6 sm:p-12 shadow-sm relative overflow-hidden">
-                                {/* ORNAMEN 3.PNG di Sudut Buku Tamu */}
-                                <img src="/3.png" alt="Floral" className="absolute -top-16 -right-16 w-56 sm:w-72 opacity-30 pointer-events-none transform rotate-45" />
-                                
+                            <div className="bg-white/60 backdrop-blur-sm border border-[#E8E2D9] p-6 sm:p-12 shadow-sm relative overflow-hidden rounded-2xl">
                                 <div className="relative z-10">
                                     <GuestBook invitationId={invitation.id} theme="rustic" />
                                 </div>
@@ -313,15 +310,16 @@ export default function ThemeRustic({ invitation, guestName }: { invitation: any
                         </FadeIn>
                     </section>
 
-                    {/* FOOTER MEWAH DENGAN 2.JPG (WREATH) */}
-                    <footer className="relative bg-[#161814] text-[#F4F1EA] text-center py-32 mt-20 overflow-hidden flex flex-col items-center justify-center">
+                    {/* FOOTER DIPERBAIKI (Bersih, elegan, tanpa broken image) */}
+                    <footer className="relative bg-[#161814] text-[#F4F1EA] text-center py-24 px-6 overflow-hidden flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-[radial-gradient(#2C2825_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none"></div>
                         
-                        {/* Wreath Floral Blend - Melingkari Text Thank You */}
-                        <img src="/2.jpg" alt="Floral Wreath" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] sm:w-[700px] max-w-none opacity-40 mix-blend-screen pointer-events-none" />
-                        
-                        <FadeIn className="relative z-10">
-                            <p className="font-cormorant text-4xl sm:text-5xl text-[#F4F1EA] italic mb-4 tracking-wide drop-shadow-lg">Thank You</p>
-                            <p className="text-[10px] sm:text-xs uppercase tracking-[0.4em] text-[#A3AA9B]">{invitation.groom_name} & {invitation.bride_name}</p>
+                        <FadeIn className="relative z-10 max-w-xl mx-auto">
+                            <span className="text-[#C5B49C] text-xl block mb-2">✧ ✧ ✧</span>
+                            <p className="font-cormorant text-4xl sm:text-5xl text-[#F4F1EA] italic mb-4 tracking-wide">Thank You</p>
+                            <p className="text-[10px] sm:text-xs uppercase tracking-[0.4em] text-[#A3AA9B] font-medium">
+                                {invitation.groom_name} & {invitation.bride_name}
+                            </p>
                         </FadeIn>
                     </footer>
 
