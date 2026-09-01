@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../src/lib/supabase'; // Pastikan path ini sesuai
 
+// Menambahkan opsi demo_url jika suatu saat Anda menambahkannya di database
 type Theme = {
   id: string;
   name: string;
@@ -12,11 +13,17 @@ type Theme = {
   price: number;
   max_photos: number;
   thumbnail_url: string | null;
+  demo_url?: string; 
 };
 
 export default function ThemesCatalogPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // State untuk fitur Demo
+  const [previewTheme, setPreviewTheme] = useState<Theme | null>(null);
+  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('mobile');
+
   const router = useRouter();
 
   useEffect(() => {
@@ -36,7 +43,7 @@ export default function ThemesCatalogPage() {
     fetchThemes();
   }, []);
 
-  // Format angka ke Rupiah (contoh: Rp 99.000)
+  // Format angka ke Rupiah
   const formatRupiah = (angka: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -47,16 +54,14 @@ export default function ThemesCatalogPage() {
 
   // Fungsi saat tombol "Pilih Tema" diklik
   const handleSelectTheme = (themeId: string) => {
-    // Arahkan ke halaman checkout dengan membawa parameter ID tema
-    // Jika belum login, kita bisa atur perlindungannya di halaman checkout nanti
     router.push(`/dashboard/checkout?theme=${themeId}`);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-200">
       
-      {/* NAVBAR SEDERHANA */}
-      <nav className="w-full bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
+      {/* NAVBAR */}
+      <nav className="w-full bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-sm shadow-md group-hover:bg-indigo-700 transition-colors">✨</div>
@@ -107,7 +112,6 @@ export default function ThemesCatalogPage() {
                 
                 {/* Gambar Thumbnail Tema */}
                 <div className="w-full h-56 bg-slate-100 relative overflow-hidden border-b border-slate-100">
-                  {/* Gunakan gambar asli dari database jika ada, jika tidak pakai placeholder warna */}
                   {theme.thumbnail_url ? (
                     <img src={theme.thumbnail_url} alt={theme.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
@@ -116,7 +120,6 @@ export default function ThemesCatalogPage() {
                     </div>
                   )}
                   
-                  {/* Badge Tema Populer (Hanya contoh logika) */}
                   {theme.price > 100000 && (
                     <div className="absolute top-4 right-4 bg-indigo-600 text-white text-[10px] px-3 py-1.5 rounded-full font-bold tracking-widest uppercase shadow-md">
                       Premium
@@ -153,10 +156,14 @@ export default function ThemesCatalogPage() {
                   {/* Tombol Aksi */}
                   <div className="grid grid-cols-2 gap-3 mt-6">
                     <button 
-                      onClick={() => alert(`Demo untuk tema ${theme.name} sedang disiapkan.`)}
-                      className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-colors border border-slate-200 text-sm"
+                      onClick={() => {
+                        setPreviewTheme(theme);
+                        setViewMode('mobile'); // Default preview ke tampilan HP
+                      }}
+                      className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-colors border border-slate-200 text-sm flex items-center justify-center gap-2"
                     >
-                      👁️ Demo
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      Demo
                     </button>
                     <button 
                       onClick={() => handleSelectTheme(theme.id)}
@@ -172,6 +179,86 @@ export default function ThemesCatalogPage() {
           </div>
         )}
       </main>
+
+      {/* =========================================
+          MODAL DEMO PREVIEW (TAMPILAN MEWAH)
+      ========================================= */}
+      {previewTheme && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300">
+          
+          {/* Top Navbar Modal */}
+          <div className="h-16 px-4 sm:px-6 flex items-center justify-between border-b border-white/10 bg-slate-900/50">
+            {/* Kiri: Judul Tema */}
+            <div className="flex items-center gap-3">
+              <span className="text-white font-bold tracking-wide">
+                Preview: <span className="text-indigo-400">{previewTheme.name}</span>
+              </span>
+            </div>
+
+            {/* Tengah: Device Toggle (Hanya Desktop) */}
+            <div className="hidden sm:flex items-center bg-slate-800 rounded-lg p-1">
+              <button 
+                onClick={() => setViewMode('mobile')}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-2 ${viewMode === 'mobile' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+              >
+                📱 Mobile
+              </button>
+              <button 
+                onClick={() => setViewMode('desktop')}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-2 ${viewMode === 'desktop' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+              >
+                💻 Desktop
+              </button>
+            </div>
+
+            {/* Kanan: Aksi */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              <button 
+                onClick={() => handleSelectTheme(previewTheme.id)}
+                className="hidden sm:block px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors"
+              >
+                Gunakan Tema Ini
+              </button>
+              <button 
+                onClick={() => setPreviewTheme(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white transition-colors"
+                title="Tutup Preview"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Iframe Area */}
+          <div className="flex-1 overflow-auto flex justify-center items-center p-4 sm:p-8">
+            <div 
+              className={`transition-all duration-500 ease-in-out relative ${
+                viewMode === 'mobile' 
+                  ? 'w-full max-w-[375px] h-[812px] max-h-[85vh] rounded-[2.5rem] border-[10px] border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden bg-white ring-1 ring-white/20' 
+                  : 'w-full max-w-7xl h-full max-h-[85vh] rounded-xl border border-slate-700 shadow-2xl overflow-hidden bg-white'
+              }`}
+            >
+              {/* Note: src memanggil route /demo/[id_tema] yang perlu Anda buat, atau bisa diisi URL statis */}
+              <iframe 
+                src={previewTheme.demo_url || `/demo/${previewTheme.id}`} 
+                className="w-full h-full border-0 bg-slate-50"
+                title={`Demo ${previewTheme.name}`}
+              />
+            </div>
+          </div>
+          
+          {/* Tombol Beli Mobile (Muncul di layar kecil) */}
+          <div className="sm:hidden p-4 bg-slate-900 border-t border-white/10">
+            <button 
+                onClick={() => handleSelectTheme(previewTheme.id)}
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-colors"
+              >
+                Gunakan Tema Ini - {formatRupiah(previewTheme.price)}
+            </button>
+          </div>
+
+        </div>
+      )}
 
     </div>
   );
