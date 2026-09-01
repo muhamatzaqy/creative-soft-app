@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
     // State Tambahan untuk Pilihan Musik (Preset vs Upload Custom)
     const [musicMode, setMusicMode] = useState<'preset' | 'upload'>('preset');
-    const [selectedPresetSong, setSelectedPresetSong] = useState('/music/acoustic.mp3');
+    const [selectedPresetSong, setSelectedPresetSong] = useState('public/music/The Paper Kites - Bloom.mp3');
 
     // Daftar Katalog Lagu Preset Anda (Pastikan file-file ini ada di folder public/music/)
     const presetMusicList = [
