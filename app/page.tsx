@@ -1,4 +1,11 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+// 1. METADATA: Mengubah judul tab browser
+export const metadata: Metadata = {
+  title: 'Creative Soft - Platform Undangan Digital Premium',
+  description: 'Buat undangan pernikahan digital elegan dalam hitungan menit dengan fitur lengkap.',
+};
 
 export default function Home() {
   return (
@@ -96,7 +103,6 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative">
-            {/* Garis Penghubung (Hanya Desktop) */}
             <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-indigo-100 via-indigo-300 to-indigo-100 z-0"></div>
 
             {[
@@ -125,8 +131,6 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* Fitur 1 */}
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1">
               <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
@@ -135,7 +139,6 @@ export default function Home() {
               <p className="text-sm text-slate-500 leading-relaxed">Tampil sempurna di semua ukuran layar ponsel cerdas hingga desktop resolusi tinggi.</p>
             </div>
 
-            {/* Fitur 2 */}
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1">
               <div className="w-12 h-12 bg-cyan-50 rounded-xl flex items-center justify-center text-cyan-600 mb-6">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -144,7 +147,6 @@ export default function Home() {
               <p className="text-sm text-slate-500 leading-relaxed">Tamu dapat mengkonfirmasi kehadiran dan memberikan ucapan langsung di undangan Anda.</p>
             </div>
 
-            {/* Fitur 3 */}
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1">
               <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-6">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
@@ -153,7 +155,6 @@ export default function Home() {
               <p className="text-sm text-slate-500 leading-relaxed">Terima tanda kasih tanpa ribet dengan fitur barcode QRIS atau integrasi nomor rekening bank.</p>
             </div>
 
-            {/* Fitur 4 */}
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1">
               <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600 mb-6">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -161,7 +162,6 @@ export default function Home() {
               <h4 className="text-lg font-bold text-slate-900 mb-2">Self-Service Dashboard</h4>
               <p className="text-sm text-slate-500 leading-relaxed">Kendalikan semuanya sendiri. Edit nama, lokasi, atau generate link tamu langsung dari Dasbor Klien.</p>
             </div>
-
           </div>
         </div>
       </section>
@@ -182,19 +182,76 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-slate-950 py-12 border-t border-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-white text-xs">✨</div>
-            <span className="font-bold text-lg text-white tracking-tight">Creative Soft.</span>
+      {/* FOOTER BARU (Memenuhi Standar Midtrans) */}
+      <footer className="bg-slate-950 py-16 border-t border-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+            {/* Kolom 1: Merek & Layanan */}
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white text-sm">✨</div>
+                <span className="font-bold text-2xl text-white tracking-tight">Creative Soft.</span>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-6">
+                Layanan pembuatan undangan pernikahan digital premium berbasis Cloud. Praktis, elegan, dan dilengkapi fitur pengiriman amplop digital terintegrasi.
+              </p>
+              
+              {/* Logo Bank/Metode Pembayaran (Wajib Midtrans) */}
+              <div className="flex gap-2 items-center">
+                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider mr-2">Pembayaran Aman:</span>
+                <div className="flex gap-2">
+                   {/* Contoh placeholder logo bank sederhana (badge) */}
+                   <span className="bg-white px-2 py-1 rounded text-[10px] font-black text-blue-900">BCA</span>
+                   <span className="bg-white px-2 py-1 rounded text-[10px] font-black text-orange-600">BNI</span>
+                   <span className="bg-white px-2 py-1 rounded text-[10px] font-black text-blue-600">MANDIRI</span>
+                   <span className="bg-white px-2 py-1 rounded text-[10px] font-black text-red-600">QRIS</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Kolom 2: Tautan Legal */}
+            <div>
+              <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-sm">Legal & Bantuan</h4>
+              <ul className="space-y-3 text-sm text-slate-400">
+                <li><Link href="/terms" className="hover:text-indigo-400 transition-colors">Syarat & Ketentuan</Link></li>
+                <li><Link href="/terms" className="hover:text-indigo-400 transition-colors">Kebijakan Privasi</Link></li>
+                <li><Link href="/terms" className="hover:text-indigo-400 transition-colors">Kebijakan Pengembalian</Link></li>
+                <li><Link href="/themes" className="hover:text-indigo-400 transition-colors">Katalog Tema</Link></li>
+              </ul>
+            </div>
+
+            {/* Kolom 3: Kontak (Wajib Midtrans) */}
+            <div>
+              <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-sm">Hubungi Kami</h4>
+              <ul className="space-y-4 text-sm text-slate-400">
+                <li className="flex items-start gap-3">
+                  <span className="text-indigo-500">📧</span>
+                  <div>
+                    <span className="block text-xs text-slate-500 mb-0.5">Email Support:</span>
+                    <a href="mailto:softwaresolution.sos25@gmail.com" className="hover:text-white transition-colors">softwaresolution.sos25@gmail.com</a>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-500">💬</span>
+                  <div>
+                    <span className="block text-xs text-slate-500 mb-0.5">WhatsApp Admin:</span>
+                    <a href="https://wa.me/6285600471854" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                      +62 856-0047-1854
+                    </a>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
-          <p className="text-slate-500 text-sm font-medium">
-            © {new Date().getFullYear()} Hak Cipta Dilindungi. Dibuat di Yogyakarta.
-          </p>
-          <div className="flex gap-6 text-sm text-slate-500 font-medium">
-            <Link href="/terms" className="hover:text-indigo-400 transition-colors">Syarat & Ketentuan</Link>
-            <a href="#" className="hover:text-indigo-400 transition-colors">Privasi</a>
+
+          <div className="pt-8 border-t border-slate-800 text-center flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-slate-500 text-sm font-medium">
+              © {new Date().getFullYear()} Creative Soft Indonesia. Hak Cipta Dilindungi.
+            </p>
+            <p className="text-slate-600 text-xs">
+              Dibuat dengan ❤️ di Yogyakarta, Indonesia.
+            </p>
           </div>
         </div>
       </footer>
