@@ -30,11 +30,13 @@ export default function DashboardPage() {
 
     // State Tambahan untuk Pilihan Musik (Preset vs Upload Custom)
     const [musicMode, setMusicMode] = useState<'preset' | 'upload'>('preset');
-    const [selectedPresetSong, setSelectedPresetSong] = useState('public/music/The Paper Kites - Bloom.mp3');
+    
+    // PENTING: Jangan gunakan kata 'public/' di depan URL karena Next.js otomatis membaca folder public
+    const [selectedPresetSong, setSelectedPresetSong] = useState('/music/The Paper Kites - Bloom.mp3');
 
-    // Daftar Katalog Lagu Preset Anda (Pastikan file-file ini ada di folder public/music/)
+    // Daftar Katalog Lagu Preset Anda
     const presetMusicList = [
-        { name: 'Acoustic Romantic (Default)', url: 'public/music/The Paper Kites - Bloom.mp3' },
+        { name: 'The Paper Kites - Bloom (Default Testing)', url: '/music/The Paper Kites - Bloom.mp3' },
         { name: 'Sweet Piano Instrumental', url: '/music/piano.mp3' },
         { name: 'Warm Ukulele Wedding', url: '/music/ukulele.mp3' },
     ];
@@ -86,7 +88,7 @@ export default function DashboardPage() {
                     event_date: formattedDate,
                     location_address: data.location_address || '',
                     google_maps_link: data.google_maps_link || '',
-                    music_url: data.music_url || 'public/music/The Paper Kites - Bloom.mp3',
+                    music_url: data.music_url || '/music/The Paper Kites - Bloom.mp3',
                     hero_image_url: data.hero_image_url || '',
                     gallery_images: data.gallery_images || [],
                     qris_image_url: data.qris_image_url || '',
@@ -124,15 +126,14 @@ export default function DashboardPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Fungsi Upload File ke Supabase Storage (Gambar atau Audio MP3)
+    // Fungsi Upload File ke Supabase Storage (Gambar atau Audio MP3 Kustom)
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, index?: number) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Batasi ukuran file (misal: Gambar max 5MB, Audio max 10MB)
-        const maxSize = fieldName === 'music_url' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+        const maxSize = fieldName === 'music_url' ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > maxSize) {
-            alert(`Ukuran file terlalu besar! Maksimal ${fieldName === 'music_url' ? '10MB' : '5MB'}.`);
+            alert(`Ukuran file terlalu besar! Maksimal ${fieldName === 'music_url' ? '15MB' : '5MB'}.`);
             return;
         }
 
@@ -150,7 +151,10 @@ export default function DashboardPage() {
             const { data } = supabase.storage.from('invitations').getPublicUrl(filePath);
             const publicUrl = data.publicUrl;
 
-            if (index !== undefined) {
+            if (fieldName === 'music_url') {
+                // Jika ini upload custom MP3, langsung simpan publicUrl ke state formData.music_url
+                setFormData(prev => ({ ...prev, music_url: publicUrl }));
+            } else if (index !== undefined) {
                 const newGallery = [...formData.gallery_images];
                 newGallery[index] = publicUrl;
                 setFormData({ ...formData, gallery_images: newGallery });
@@ -164,14 +168,14 @@ export default function DashboardPage() {
         }
     };
 
-    // Simpan Data Undangan
+    // Simpan Data Undangan ke Database
     const handleSaveData = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!orderData) return;
 
         setIsSaving(true);
         try {
-            // Tentukan URL musik akhir berdasarkan mode yang dipilih klien
+            // Tentukan URL musik akhir: jika mode preset pakai selectedPresetSong, jika upload pakai formData.music_url hasil upload storage
             let finalMusicUrl = formData.music_url;
             if (musicMode === 'preset') {
                 finalMusicUrl = selectedPresetSong;
@@ -190,7 +194,7 @@ export default function DashboardPage() {
                 bank_name: formData.bank_name,
                 bank_account_name: formData.bank_account_name,
                 bank_account_number: formData.bank_account_number,
-                is_active: true // Otomatis aktifkan link publik jika data disimpan
+                is_active: true
             };
 
             const { error } = await supabase
@@ -226,7 +230,6 @@ export default function DashboardPage() {
         );
     }
 
-    // Jika Klien BELUM memesan tema sama sekali
     if (!orderData) {
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-center">
@@ -263,7 +266,7 @@ export default function DashboardPage() {
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
                 
-                {/* BANNER STATUS PEMBAYARAN */}
+                {/* BANNER STATUS */}
                 <div className="mb-8 p-6 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold ${
@@ -298,7 +301,7 @@ export default function DashboardPage() {
                     )}
                 </div>
 
-                {/* KONTEN UTAMA DENGAN SISTEM TAB */}
+                {/* TABS KONTEN */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     <div className="flex overflow-x-auto border-b border-slate-200 bg-slate-50/50">
                         <button onClick={() => setActiveTab('status')} className={tabClasses('status')}>ℹ️ Status & Info</button>
@@ -314,25 +317,16 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="p-8">
-                        {/* TAB 1: STATUS & INFO */}
                         {activeTab === 'status' && (
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-bold text-slate-900">Informasi Akun & Pesanan</h2>
-                                <p className="text-slate-500 text-sm leading-relaxed">
-                                    {orderData.is_data_locked 
-                                        ? 'Form pengisian data saat ini dikunci karena pembayaran Anda sedang diverifikasi oleh Admin. Setelah disetujui, form akan terbuka secara otomatis.'
-                                        : 'Pembayaran Anda telah disetujui! Silakan isi data mempelai, waktu, lokasi, dan galeri foto melalui tab di atas.'
-                                    }
-                                </p>
                                 <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
                                     <div className="flex justify-between"><span className="text-slate-500">Tema Dipilih:</span><span className="font-bold uppercase text-slate-900">{orderData.theme_name}</span></div>
                                     <div className="flex justify-between"><span className="text-slate-500">Total Tagihan:</span><span className="font-bold text-indigo-600">Rp {Number(orderData.amount_billed).toLocaleString('id-ID')}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-500">Tanggal Pesan:</span><span className="font-medium text-slate-700">{new Date(orderData.created_at).toLocaleDateString('id-ID')}</span></div>
                                 </div>
                             </div>
                         )}
 
-                        {/* TAB 2: DATA ACARA */}
                         {activeTab === 'data' && (
                             <form onSubmit={handleSaveData} className="space-y-6">
                                 <h2 className="text-2xl font-bold text-slate-900 mb-6">Formulir Data Mempelai & Acara</h2>
@@ -351,7 +345,6 @@ export default function DashboardPage() {
                             </form>
                         )}
 
-                        {/* TAB 3: GALERI & MUSIK */}
                         {activeTab === 'galeri' && (
                             <form onSubmit={handleSaveData} className="space-y-8">
                                 <h2 className="text-2xl font-bold text-slate-900">Media, Galeri & Amplop Digital</h2>
@@ -362,7 +355,7 @@ export default function DashboardPage() {
                                     <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'hero_image_url')} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700 font-semibold cursor-pointer" />
                                 </div>
 
-                                {/* PENGATURAN MUSIK (PRESET VS UPLOAD) */}
+                                {/* PENGATURAN MUSIK */}
                                 <div className="space-y-4 pt-4 border-t border-slate-100">
                                     <label className="block text-sm font-bold text-slate-700">Backsound Musik Latar</label>
                                     
@@ -406,7 +399,7 @@ export default function DashboardPage() {
                                                 className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700 font-semibold cursor-pointer" 
                                             />
                                             {formData.music_url && !presetMusicList.some(s => s.url === formData.music_url) && (
-                                                <p className="text-xs text-emerald-600 font-medium">✓ File MP3 kustom berhasil diunggah.</p>
+                                                <p className="text-xs text-emerald-600 font-medium">✓ File MP3 kustom berhasil diunggah ke Supabase Storage.</p>
                                             )}
                                         </div>
                                     )}
@@ -429,18 +422,14 @@ export default function DashboardPage() {
                             </form>
                         )}
 
-                        {/* TAB 4: SEBAR & RSVP */}
                         {activeTab === 'tamu' && orderData.payment_status === 'paid' && (
                             <div className="space-y-8">
                                 <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
                                     <h3 className="font-bold text-xl text-indigo-900 mb-2">🔗 Generator Tautan Tamu Khusus</h3>
-                                    <p className="text-sm text-indigo-700 mb-4">Masukkan nama tamu untuk membuat tautan yang langsung menyapa nama mereka saat dibuka.</p>
-                                    
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <input type="text" value={guestInputName} onChange={(e) => setGuestInputName(e.target.value)} placeholder="Contoh: Bapak Budi Santoso" className="flex-1 px-4 py-3 border border-indigo-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
                                         <button onClick={handleGenerateGuestLink} type="button" className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-colors shadow-sm">Buat Tautan</button>
                                     </div>
-
                                     {generatedGuestLink && (
                                         <div className="mt-4 p-4 bg-white rounded-xl border border-indigo-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
                                             <span className="text-xs font-mono text-slate-600 break-all">{generatedGuestLink}</span>
@@ -448,7 +437,6 @@ export default function DashboardPage() {
                                         </div>
                                     )}
                                 </div>
-
                                 <RsvpViewer invitationId={orderData.id} />
                             </div>
                         )}
