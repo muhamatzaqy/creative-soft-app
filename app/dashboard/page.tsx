@@ -86,7 +86,7 @@ export default function DashboardPage() {
                     event_date: formattedDate,
                     location_address: data.location_address || '',
                     google_maps_link: data.google_maps_link || '',
-                    music_url: data.music_url || '/music/acoustic.mp3',
+                    music_url: data.music_url || 'public/music/The Paper Kites - Bloom.mp3',
                     hero_image_url: data.hero_image_url || '',
                     gallery_images: data.gallery_images || [],
                     qris_image_url: data.qris_image_url || '',
