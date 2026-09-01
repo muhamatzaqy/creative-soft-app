@@ -34,7 +34,7 @@ export default function DashboardPage() {
 
     // Daftar Katalog Lagu Preset Anda (Pastikan file-file ini ada di folder public/music/)
     const presetMusicList = [
-        { name: 'Acoustic Romantic (Default)', url: '/music/acoustic.mp3' },
+        { name: 'Acoustic Romantic (Default)', url: 'public/music/The Paper Kites - Bloom.mp3' },
         { name: 'Sweet Piano Instrumental', url: '/music/piano.mp3' },
         { name: 'Warm Ukulele Wedding', url: '/music/ukulele.mp3' },
     ];
