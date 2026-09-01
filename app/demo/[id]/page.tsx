@@ -1,11 +1,15 @@
-import ThemeRustic from '@/app/components/themes/ThemeRustic'; 
-// Catatan: Sesuaikan path import di atas dengan lokasi file ThemeRustic.tsx Anda. 
-// Jika lokasinya berbeda, ubah path-nya.
+import ThemeElegant from '@/app/components/themes/ThemeElegant';
+import ThemeFloral from '@/app/components/themes/ThemeFloral';
+import ThemeMinimalist from '@/app/components/themes/ThemeMinimalist';
+import ThemeModern from '@/app/components/themes/ThemeModern';
+import ThemeRustic from '@/app/components/themes/ThemeRustic';
 
 export default function DemoPage({ params }: { params: { id: string } }) {
-  
+  // Ambil ID tema dari URL (misalnya: 'elegant', 'rustic', dll)
+  const themeId = params.id;
+
   // 1. DATA BOHONGAN (DUMMY DATA) UNTUK PREVIEW
-  // Data ini digunakan agar tema tidak kosong saat di-preview oleh klien
+  // Data ini wajib ada agar komponen tema tidak error saat menagih data nama/tanggal
   const dummyInvitation = {
     id: 'demo-123',
     groom_name: 'Romeo',
@@ -27,27 +31,36 @@ export default function DemoPage({ params }: { params: { id: string } }) {
 
   const dummyGuestName = "Tamu Kehormatan";
 
-  // 2. LOGIKA PEMILIHAN TEMA BERDASARKAN ID
-  // Ganti 'rustic' dengan ID tema yang ada di database Supabase Anda
-  // (misalnya jika di database ID-nya adalah 'theme-001', maka ubah menjadi params.id === 'theme-001')
-  
-  if (params.id === 'rustic' || params.id === 'Tema-Rustic-Di-Database-Anda') {
-    return <ThemeRustic invitation={dummyInvitation} guestName={dummyGuestName} />;
+  // 2. ROUTER TEMA BERDASARKAN ID DATABASE
+  // Pastikan 'case' di bawah ini sama persis dengan kolom 'id' di database Supabase Anda
+  switch (themeId) {
+    case 'elegant':
+      return <ThemeElegant invitation={dummyInvitation} guestName={dummyGuestName} />;
+    
+    case 'floral':
+      return <ThemeFloral invitation={dummyInvitation} guestName={dummyGuestName} />;
+    
+    case 'minimalist':
+      return <ThemeMinimalist invitation={dummyInvitation} guestName={dummyGuestName} />;
+    
+    case 'modern':
+      return <ThemeModern invitation={dummyInvitation} guestName={dummyGuestName} />;
+    
+    case 'rustic':
+      return <ThemeRustic invitation={dummyInvitation} guestName={dummyGuestName} />;
+      
+    default:
+      // Halaman ini akan muncul jika ID dari database tidak cocok dengan case di atas
+      return (
+        <div className="flex min-h-screen items-center justify-center p-8 text-center bg-slate-50 text-slate-800">
+          <div>
+            <h1 className="text-3xl font-bold mb-4 text-slate-400">🚧</h1>
+            <h2 className="text-2xl font-bold mb-2">Demo Belum Tersedia</h2>
+            <p className="text-slate-500">
+              Preview untuk tema dengan ID <strong>{themeId}</strong> sedang dalam tahap pengembangan atau komponen belum didaftarkan.
+            </p>
+          </div>
+        </div>
+      );
   }
-
-  // Jika nanti Anda punya tema baru, tinggal tambahkan di sini:
-  // if (params.id === 'minimalist') {
-  //   return <ThemeMinimalist invitation={dummyInvitation} guestName={dummyGuestName} />;
-  // }
-
-  // 3. FALLBACK (Jika ID tema tidak ditemukan / belum ada komponennya)
-  return (
-    <div className="flex min-h-screen items-center justify-center p-8 text-center bg-slate-50 text-slate-800">
-      <div>
-        <h1 className="text-3xl font-bold mb-4 text-slate-400">🚧</h1>
-        <h2 className="text-2xl font-bold mb-2">Demo Belum Tersedia</h2>
-        <p className="text-slate-500">Preview untuk tema dengan ID <strong>{params.id}</strong> sedang dalam tahap pengembangan.</p>
-      </div>
-    </div>
-  );
 }
