@@ -193,7 +193,7 @@ export default function Home() {
             © {new Date().getFullYear()} Hak Cipta Dilindungi. Dibuat di Yogyakarta.
           </p>
           <div className="flex gap-6 text-sm text-slate-500 font-medium">
-            <a href="#" className="hover:text-indigo-400 transition-colors">Syarat & Ketentuan</a>
+            <Link href="/terms" className="hover:text-indigo-400 transition-colors">Syarat & Ketentuan</Link>
             <a href="#" className="hover:text-indigo-400 transition-colors">Privasi</a>
           </div>
         </div>
