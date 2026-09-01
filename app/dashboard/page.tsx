@@ -28,6 +28,17 @@ export default function DashboardPage() {
         bank_account_number: ''
     });
 
+    // State Tambahan untuk Pilihan Musik (Preset vs Upload Custom)
+    const [musicMode, setMusicMode] = useState<'preset' | 'upload'>('preset');
+    const [selectedPresetSong, setSelectedPresetSong] = useState('/music/acoustic.mp3');
+
+    // Daftar Katalog Lagu Preset Anda (Pastikan file-file ini ada di folder public/music/)
+    const presetMusicList = [
+        { name: 'Acoustic Romantic (Default)', url: '/music/acoustic.mp3' },
+        { name: 'Sweet Piano Instrumental', url: '/music/piano.mp3' },
+        { name: 'Warm Ukulele Wedding', url: '/music/ukulele.mp3' },
+    ];
+
     const [isSaving, setIsSaving] = useState(false);
     const [uploadingState, setUploadingState] = useState<{ [key: string]: boolean }>({});
     
@@ -75,7 +86,7 @@ export default function DashboardPage() {
                     event_date: formattedDate,
                     location_address: data.location_address || '',
                     google_maps_link: data.google_maps_link || '',
-                    music_url: data.music_url || '',
+                    music_url: data.music_url || '/music/acoustic.mp3',
                     hero_image_url: data.hero_image_url || '',
                     gallery_images: data.gallery_images || [],
                     qris_image_url: data.qris_image_url || '',
@@ -83,6 +94,15 @@ export default function DashboardPage() {
                     bank_account_name: data.bank_account_name || '',
                     bank_account_number: data.bank_account_number || ''
                 });
+
+                // Cek apakah musik saat ini merupakan salah satu preset atau URL kustom
+                const isPreset = presetMusicList.some(song => song.url === data.music_url);
+                if (isPreset) {
+                    setMusicMode('preset');
+                    setSelectedPresetSong(data.music_url);
+                } else if (data.music_url) {
+                    setMusicMode('upload');
+                }
 
                 // Jika data sudah terbuka, default tab ke 'data'
                 if (!data.is_data_locked) {
@@ -104,13 +124,15 @@ export default function DashboardPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Fungsi Upload File ke Supabase Storage
+    // Fungsi Upload File ke Supabase Storage (Gambar atau Audio MP3)
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, index?: number) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            alert('Ukuran file terlalu besar! Maksimal 5MB.');
+        // Batasi ukuran file (misal: Gambar max 5MB, Audio max 10MB)
+        const maxSize = fieldName === 'music_url' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert(`Ukuran file terlalu besar! Maksimal ${fieldName === 'music_url' ? '10MB' : '5MB'}.`);
             return;
         }
 
@@ -149,13 +171,19 @@ export default function DashboardPage() {
 
         setIsSaving(true);
         try {
+            // Tentukan URL musik akhir berdasarkan mode yang dipilih klien
+            let finalMusicUrl = formData.music_url;
+            if (musicMode === 'preset') {
+                finalMusicUrl = selectedPresetSong;
+            }
+
             const payload = {
                 groom_name: formData.groom_name,
                 bride_name: formData.bride_name,
                 event_date: formData.event_date,
                 location_address: formData.location_address,
                 google_maps_link: formData.google_maps_link,
-                music_url: formData.music_url,
+                music_url: finalMusicUrl,
                 hero_image_url: formData.hero_image_url,
                 gallery_images: formData.gallery_images,
                 qris_image_url: formData.qris_image_url,
@@ -334,9 +362,54 @@ export default function DashboardPage() {
                                     <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'hero_image_url')} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700 font-semibold cursor-pointer" />
                                 </div>
 
+                                {/* PENGATURAN MUSIK (PRESET VS UPLOAD) */}
                                 <div className="space-y-4 pt-4 border-t border-slate-100">
-                                    <label className="block text-sm font-bold text-slate-700">Backsound Musik (URL Link MP3)</label>
-                                    <input type="url" name="music_url" value={formData.music_url} onChange={handleChange} className={inputClasses} placeholder="https://example.com/music.mp3" />
+                                    <label className="block text-sm font-bold text-slate-700">Backsound Musik Latar</label>
+                                    
+                                    <div className="flex gap-6 mb-3">
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+                                            <input 
+                                                type="radio" 
+                                                name="musicMode" 
+                                                checked={musicMode === 'preset'} 
+                                                onChange={() => setMusicMode('preset')} 
+                                            />
+                                            Pilih dari Katalog Lagu
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+                                            <input 
+                                                type="radio" 
+                                                name="musicMode" 
+                                                checked={musicMode === 'upload'} 
+                                                onChange={() => setMusicMode('upload')} 
+                                            />
+                                            Upload File MP3 Sendiri
+                                        </label>
+                                    </div>
+
+                                    {musicMode === 'preset' ? (
+                                        <select 
+                                            value={selectedPresetSong} 
+                                            onChange={(e) => setSelectedPresetSong(e.target.value)}
+                                            className={inputClasses}
+                                        >
+                                            {presetMusicList.map((song, idx) => (
+                                                <option key={idx} value={song.url}>{song.name}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <input 
+                                                type="file" 
+                                                accept="audio/mp3,audio/mpeg" 
+                                                onChange={(e) => handleFileUpload(e, 'music_url')} 
+                                                className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700 font-semibold cursor-pointer" 
+                                            />
+                                            {formData.music_url && !presetMusicList.some(s => s.url === formData.music_url) && (
+                                                <p className="text-xs text-emerald-600 font-medium">✓ File MP3 kustom berhasil diunggah.</p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4 pt-4 border-t border-slate-100">
