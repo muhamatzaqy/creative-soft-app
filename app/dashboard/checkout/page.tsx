@@ -37,7 +37,7 @@ function CheckoutForm() {
             }
             setUserId(user.id);
 
-            // 2. Cek apakah user sudah punya undangan sebelumnya (opsional: batasi 1 akun 1 undangan)
+            // 2. Cek apakah user sudah punya undangan sebelumnya
             const { data: existingOrder } = await supabase
                 .from('invitations')
                 .select('id')
@@ -174,7 +174,7 @@ function CheckoutForm() {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     
-                    {/* KOLOM KIRI: Ringkasan Pesanan & Instruksi */}
+                    {/* KOLOM KIRI: Ringkasan Pesanan & QRIS */}
                     <div className="lg:col-span-5 space-y-6">
                         <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
                             <h2 className="text-lg font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">Ringkasan Pesanan</h2>
@@ -199,16 +199,24 @@ function CheckoutForm() {
                             </div>
                         </div>
 
+                        {/* KOTAK INSTRUKSI QRIS */}
                         <div className="bg-indigo-900 text-white rounded-3xl p-8 shadow-md relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-800 rounded-bl-full -mr-10 -mt-10 z-0"></div>
                             <div className="relative z-10">
-                                <h2 className="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-4">Instruksi Transfer</h2>
-                                <p className="text-sm text-indigo-100 mb-6 leading-relaxed">Silakan transfer tepat <strong className="text-white">{formatRupiah(theme.price)}</strong> ke rekening di bawah ini, lalu unggah buktinya pada form di samping.</p>
+                                <h2 className="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-3">Scan QRIS Pembayaran</h2>
+                                <p className="text-sm text-indigo-100 mb-6 leading-relaxed">
+                                    Gunakan GoPay, OVO, DANA, BCA, atau aplikasi perbankan apa pun untuk memindai QRIS di bawah ini sejumlah <strong className="text-white">{formatRupiah(theme.price)}</strong>.
+                                </p>
                                 
-                                <div className="bg-indigo-950/50 p-4 rounded-xl border border-indigo-800 backdrop-blur-sm mb-4">
-                                    <p className="text-xs text-indigo-300 mb-1 uppercase tracking-widest">Bank BCA</p>
-                                    <p className="text-2xl font-mono font-bold tracking-wider mb-1">123 456 7890</p>
-                                    <p className="text-sm">A/N Creative Soft Indonesia</p>
+                                {/* Gambar QRIS */}
+                                <div className="bg-white p-4 rounded-2xl shadow-inner flex flex-col items-center mb-4">
+                                    <img src="/qris-admin.jpg" alt="QRIS Software Solution" className="w-56 h-auto rounded-xl object-contain" />
+                                    <span className="text-[10px] text-slate-500 mt-2 font-mono font-bold tracking-widest">SOFTWARE SOLUTION</span>
+                                </div>
+
+                                <div className="bg-indigo-950/50 p-4 rounded-xl border border-indigo-800 backdrop-blur-sm text-xs space-y-1">
+                                    <p className="text-indigo-300 font-medium">Informasi:</p>
+                                    <p className="text-indigo-100">Pembayaran diproses instan via QRIS Nasional (GPN). Setelah transfer, unggah buktinya di samping.</p>
                                 </div>
                             </div>
                         </div>
@@ -218,7 +226,7 @@ function CheckoutForm() {
                     <div className="lg:col-span-7">
                         <form onSubmit={handleCheckout} className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                             <h2 className="text-2xl font-bold text-slate-900 mb-2">Konfirmasi Pembayaran</h2>
-                            <p className="text-slate-500 text-sm mb-8">Amankan tautan URL Anda dan unggah bukti transfer untuk verifikasi.</p>
+                            <p className="text-slate-500 text-sm mb-8">Amankan tautan URL Anda dan unggah bukti transfer/screenshot QRIS untuk verifikasi.</p>
 
                             <div className="space-y-8">
                                 <div>
@@ -240,7 +248,7 @@ function CheckoutForm() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Upload Bukti Transfer</label>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Upload Bukti Transfer / Screenshot QRIS</label>
                                     <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl hover:border-indigo-400 hover:bg-indigo-50/50 transition-colors bg-slate-50">
                                         <div className="space-y-2 text-center">
                                             <div className="text-4xl mb-3">🧾</div>
